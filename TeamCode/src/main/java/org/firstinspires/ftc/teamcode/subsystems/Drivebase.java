@@ -3,7 +3,6 @@ package org.firstinspires.ftc.teamcode.subsystems;
 import com.qualcomm.hardware.gobilda.GoBildaPinpointDriver;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
-import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 
 import org.firstinspires.ftc.robotcore.external.Telemetry;
@@ -11,7 +10,7 @@ import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.Pose2D;
 import org.firstinspires.ftc.teamcode.FieldConstants;
-import org.firstinspires.ftc.teamcode.autonomi.Location;
+import org.firstinspires.ftc.teamcode.Location;
 import org.firstinspires.ftc.teamcode.commandSystem.Subsystem;
 
 public class Drivebase extends Subsystem {
@@ -86,20 +85,25 @@ public class Drivebase extends Subsystem {
         modify_joystick_rotate = joystick_rx_modifier;
     }
 
+    /**
+     * Field-relative stick drive. {@code headingOffset} is the field heading the stick should treat as
+     * "forward" (see FieldConstants.RED_STICK_UP_HEADING_DEG / BLUE_STICK_UP_HEADING_DEG), so the same
+     * stick direction always
+     * moves the robot the same way on the field no matter which way it is facing.
+     */
     public void drive(double forward, double right, double rotate, double headingOffset) {
         headingOffsetThingy = headingOffset;
         drive(forward, right, rotate + modify_joystick_rotate);
     }
 
-    // The robot's translation was coming out reversed (forward/back and left/right) with rotation correct,
-    // so the translation inputs are flipped here. Set to 1 if that's ever fixed at the source.
-    private static final double TRANSLATION_SIGN = -1;
-
+    /**
+     * Robot-relative drive. Positive {@code forward} moves the robot forward, positive {@code right}
+     * strafes it to its right, and positive {@code rotate} turns clockwise. Uses the heading offset set
+     * by the last call to {@link #drive(double, double, double, double)} (0 after a {@link #driveField} call).
+     */
     public void drive(double forward, double right, double rotate) {
-        forward *= TRANSLATION_SIGN;
-        right *= TRANSLATION_SIGN;
         double botHeading = -Pinpoint.getHeading(AngleUnit.RADIANS) + headingOffsetThingy;
-//         X is positive up, Y is positive to the right
+        // Rotate the robot-relative command into the field frame using the current heading.
         double rotRight = right * Math.cos(botHeading) - forward * Math.sin(botHeading);
         double rotForward = right * Math.sin(botHeading) + forward * Math.cos(botHeading);
 
@@ -149,13 +153,13 @@ public class Drivebase extends Subsystem {
 
     /**
      * Drives in the field frame. xPower moves toward +X, yPower toward +Y, and ccwTurnPower turns
-     * counter-clockwise (heading increasing). This hides the sign conventions of drive():
-     * a positive "forward" argument there moves toward -X, a positive "right" argument moves
-     * toward +Y, and a positive rotate turns clockwise.
+     * counter-clockwise (heading increasing).
      */
     public void driveField(double xPower, double yPower, double ccwTurnPower) {
         headingOffsetThingy = 0;   // field moves are absolute; drop any teleop stick offset
-        drive(-xPower, yPower, -ccwTurnPower);
+        // drive() is robot-relative: +forward is the robot's nose and +right is its right, so a field
+        // +Y (left of a +X-facing robot) needs a negative "right" command.
+        drive(xPower, -yPower, -ccwTurnPower);
     }
 
     /** Runs one control step toward a field target. Call every loop after update(). */
@@ -180,7 +184,7 @@ public class Drivebase extends Subsystem {
             telemetry.addData("Error", "X: %.1f  Y: %.1f  H: %.1f", xError, yError, headingError);
         }
 
-        driveField(-xPower, -yPower, turnPower);
+        driveField(xPower, yPower, turnPower);
     }
     public void brake() {
         frontLeftMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);

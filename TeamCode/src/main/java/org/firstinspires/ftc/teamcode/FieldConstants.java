@@ -31,37 +31,35 @@ public final class FieldConstants {
     public static final Pose2D FIELD_CENTER =
             new Pose2D(DistanceUnit.INCH, FIELD_CENTER_X, FIELD_CENTER_Y, AngleUnit.DEGREES, 90);
 
-    // Where the robot starts and which way it faces: (60, 8) facing up the field (+Y), the same
-    // start redAuto uses. The heading matters: field-relative moves (like "decrease X") only go the
-    // right physical direction if this heading matches how the robot is actually placed.
-    public static final Pose2D START_POSE =
+    // Autonomous start poses. Red and blue start in opposite corners, each facing its goal.
+    public static final Pose2D RED_START_POSE =
             new Pose2D(DistanceUnit.INCH, 60, 8, AngleUnit.DEGREES, 90);
+    public static final Pose2D BLUE_START_POSE =
+            new Pose2D(DistanceUnit.INCH, 86, 132, AngleUnit.DEGREES, 270);
 
-    // Pose a standalone teleop starts from. The robot is placed turned 180 degrees from the autonomous start,
-    // so this uses the true (reversed) heading. That keeps the heading consistent with the pose autonomous
-    // hands over through PoseStorage, which is also a true heading.
-    public static final Pose2D TELEOP_START_POSE =
-            new Pose2D(DistanceUnit.INCH, START_POSE.getX(DistanceUnit.INCH), START_POSE.getY(DistanceUnit.INCH),
-                    AngleUnit.DEGREES, normalizeDegrees(START_POSE.getHeading(AngleUnit.DEGREES) + 180));
+    /** Red's autonomous start pose. Alias kept for the red autos, which reference START_POSE. */
+    public static final Pose2D START_POSE = RED_START_POSE;
 
-    // Field direction (degrees) that pushing the teleop drive stick UP moves the robot toward. With a true
-    // heading this is the same whether teleop starts on its own or after autonomous.
-    public static final double TELEOP_STICK_UP_HEADING_DEG = normalizeDegrees(START_POSE.getHeading(AngleUnit.DEGREES));
+    // Where a teleop-only robot is placed, and where gamepad2 Share resets it to. Same spot and heading
+    // as each autonomous start, so a fresh teleop matches the pose autonomous hands over.
+    public static final Pose2D RED_TELEOP_START_POSE = RED_START_POSE;
+    public static final Pose2D BLUE_TELEOP_START_POSE = BLUE_START_POSE;
 
-    // Blue goal aim points: 105 cm in front of and 83 cm (or 60 cm) to the left of the robot's
-    // starting position, as originally measured. Converted here to field inches.
-    public static final Pose2D BLUE_GOAL_CASE_ONE = offsetFromStart(DistanceUnit.CM, 105, 83);
-    public static final Pose2D BLUE_GOAL_CASE_TWO = offsetFromStart(DistanceUnit.CM, 105, 60);
+    // Field direction (degrees) that pushing the teleop drive stick UP moves the robot toward: away from
+    // each alliance's driver station. Red drives toward +Y, blue toward -Y.
+    public static final double RED_STICK_UP_HEADING_DEG = 90;
+    public static final double BLUE_STICK_UP_HEADING_DEG = 270;
 
-    /** A field pose located (forward, left) away from START_POSE, relative to the way the robot starts facing. */
-    public static Pose2D offsetFromStart(DistanceUnit unit, double forward, double left) {
-        double h = START_POSE.getHeading(AngleUnit.RADIANS);
-        double dx = DISTANCE_UNIT.fromUnit(unit, forward);
-        double dy = DISTANCE_UNIT.fromUnit(unit, left);
-        double x = START_POSE.getX(DISTANCE_UNIT) + dx * Math.cos(h) - dy * Math.sin(h);
-        double y = START_POSE.getY(DISTANCE_UNIT) + dx * Math.sin(h) + dy * Math.cos(h);
-        return new Pose2D(DISTANCE_UNIT, x, y, AngleUnit.RADIANS, 0);
-    }
+    // Teleop auto-aim points, in field inches. "Case one" is the goal's position at the start of the
+    // match; "case two" is after the goal tips (toggled with gamepad2 Square -> cellPosition).
+    public static final Pose2D RED_GOAL_CASE_ONE =
+            new Pose2D(DistanceUnit.INCH, 60, 60, AngleUnit.DEGREES, 0);
+    public static final Pose2D RED_GOAL_CASE_TWO =
+            new Pose2D(DistanceUnit.INCH, 60, 85, AngleUnit.DEGREES, 0);
+    public static final Pose2D BLUE_GOAL_CASE_ONE =
+            new Pose2D(DistanceUnit.INCH, 84, 85, AngleUnit.DEGREES, 0);
+    public static final Pose2D BLUE_GOAL_CASE_TWO =
+            new Pose2D(DistanceUnit.INCH, 84, 60, AngleUnit.DEGREES, 0);
 
     /** Wraps an angle in degrees into [-180, 180). */
     public static double normalizeDegrees(double degrees) {

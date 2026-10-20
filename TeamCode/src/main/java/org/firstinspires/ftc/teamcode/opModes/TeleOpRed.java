@@ -3,7 +3,6 @@ package org.firstinspires.ftc.teamcode.opModes;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
-import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.Pose2D;
 import org.firstinspires.ftc.teamcode.FieldConstants;
 import org.firstinspires.ftc.teamcode.subsystems.Drivebase;
@@ -21,15 +20,15 @@ public class TeleOpRed extends LinearOpMode {
     double cellPosition; // this tells us what position the hive is in. If 1, the upward cell is on the right when standing in the blue driver station. if zero, that side is down.
     // Where this teleop's robot is placed at the start. Used when no auto has run, and by the gamepad2 Share reset.
     // Kept per teleop so Red and Blue can use different poses if auto-aim needs them to.
-    Pose2D teleopStartPose = FieldConstants.TELEOP_START_POSE;
-    Pose2D BlueGoalCaseOne = FieldConstants.BLUE_GOAL_CASE_ONE;
-    Pose2D BlueGoalCaseTwo = FieldConstants.BLUE_GOAL_CASE_TWO;
+    Pose2D teleopStartPose = FieldConstants.RED_TELEOP_START_POSE;
+    Pose2D RedGoalCaseOne = FieldConstants.RED_GOAL_CASE_ONE;
+    Pose2D RedGoalCaseTwo = FieldConstants.RED_GOAL_CASE_TWO;
 
     @Override
     public void runOpMode() throws InterruptedException {
         drivebase = new Drivebase(hardwareMap);
         intake = new Intake(hardwareMap);
-        shooter = new Shooter(hardwareMap, drivebase, intake, gamepad1);
+        shooter = new Shooter(hardwareMap, intake, gamepad1);
 
         double pollenTargetSpeed = 1225;
         double nectarTargetSpeed = 1215;
@@ -39,18 +38,19 @@ public class TeleOpRed extends LinearOpMode {
         cellPosition = 1; //cell starts with blue alliance cell up, red alliance cell down.
 
         // Use the shared field frame (inches, origin bottom-left, center (70, 70)); see FieldConstants.
-        // If autonomous has run since the Robot Controller app started, continue from the last pose it saved
-        // (it's kept, not cleared, so restarting teleop still uses it). Otherwise start at teleopStartPose
-        // (the robot placed turned 180 degrees from the autonomous start). Gamepad2 Share resets to teleopStartPose.
+        // If autonomous has run, continue from the last pose it saved. Teleop keeps updating that pose while
+        // it runs, so restarting teleop also resumes from where the robot actually is. Otherwise start at
+        // teleopStartPose (the same spot and heading as this alliance's autonomous start). Gamepad2 Share
+        // resets to teleopStartPose when the robot has been re-placed.
         if (PoseStorage.currentPose != null) {
-            drivebase.setCurrentPose(new Pose2D(DistanceUnit.INCH, PoseStorage.currentPose.getX(DistanceUnit.INCH), PoseStorage.currentPose.getY(DistanceUnit.INCH), AngleUnit.DEGREES,PoseStorage.currentPose.getHeading(AngleUnit.DEGREES) + 270));
+            drivebase.setCurrentPose(PoseStorage.currentPose);
         } else {
             drivebase.getPinpoint().resetPosAndIMU();
             sleep(300);   // let the Pinpoint finish its IMU reset before we write a pose to it
             drivebase.setCurrentPose(teleopStartPose);
         }
         // Field direction the drive stick pushes toward.
-        double stickUpHeadingRad = Math.toRadians(FieldConstants.TELEOP_STICK_UP_HEADING_DEG);
+        double stickUpHeadingRad = Math.toRadians(FieldConstants.RED_STICK_UP_HEADING_DEG);
 
         waitForStart();
 
@@ -58,6 +58,7 @@ public class TeleOpRed extends LinearOpMode {
 
         while (opModeIsActive()) {
             drivebase.update();
+            PoseStorage.currentPose = drivebase.getPosition();   // keep the handoff pose current for a teleop restart
 
             // Options: re-zero the heading with the robot placed in the teleop starting orientation.
             if (gamepad1.optionsWasPressed()) {
@@ -87,7 +88,7 @@ public class TeleOpRed extends LinearOpMode {
                 shooter.setState(Shooter.CaseModes.SHOOT_GATE_CLOSED);
             }
 
-            drivebase.drive(y, x, rx, stickUpHeadingRad);
+            drivebase.drive(-y, -x, rx, stickUpHeadingRad);
 
             // DRIVER TWO
             if (gamepad2.squareWasPressed()) {
@@ -122,7 +123,7 @@ public class TeleOpRed extends LinearOpMode {
             telemetry.addData("Nectar Speed", shooter.getNectarShooterVelocity());
             telemetry.addData("Position", drivebase.getPositionTelemetry());
             telemetry.addData("Cell Position", cellPosition);
-            telemetry.addData("Angle to goal", errorDeg = (Drivebase.angleToGoal(drivebase.getPosition(), BlueGoalCaseOne)) * (180 / Math.PI));
+            telemetry.addData("Angle to goal", errorDeg = (Drivebase.angleToGoal(drivebase.getPosition(), RedGoalCaseOne)) * (180 / Math.PI));
             telemetry.update();
         }
     }
@@ -138,7 +139,7 @@ public class TeleOpRed extends LinearOpMode {
     }
 
     public void autoAim() {
-        Pose2D goal = (cellPosition == 1) ? BlueGoalCaseOne : BlueGoalCaseTwo;
+        Pose2D goal = (cellPosition == 1) ? RedGoalCaseOne : RedGoalCaseTwo;
         errorDeg = (Drivebase.angleToGoal(drivebase.getPosition(), goal)) * (180 / Math.PI);
         rx = rx + errorDeg * -0.015;
     }

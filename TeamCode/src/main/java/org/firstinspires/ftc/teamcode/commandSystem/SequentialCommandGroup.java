@@ -46,7 +46,9 @@ public class SequentialCommandGroup extends CommandGroup {
 
     @Override
     public boolean isFinished() {
-        return index == commands.length - 1 && commands[index].isFinished();
+        return index == commands.length - 1
+                && hasStarted
+                && commands[index].state == State.UNSCHEDULED;
     }
 
     public static class Builder {

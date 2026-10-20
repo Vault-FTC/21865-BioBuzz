@@ -2,13 +2,11 @@ package org.firstinspires.ftc.teamcode.subsystems;
 
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
-import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.Gamepad;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.PIDFCoefficients;
 import com.qualcomm.robotcore.hardware.Servo;
 
-import org.firstinspires.ftc.robotcore.external.navigation.UnnormalizedAngleUnit;
 import org.firstinspires.ftc.teamcode.commandSystem.Subsystem;
 
 public class Shooter extends Subsystem {
@@ -20,12 +18,9 @@ public class Shooter extends Subsystem {
     private final DcMotorEx nectarShooter;
     private final Servo pollenGate;
     private final Servo nectarGate;
-    private final Drivebase drivebase;
     private final Intake intake;
     double pollenSpeed;
     double nectarSpeed;
-    double kP = 0.02; //check this
-    double kD = 0.0015; //check this
     CaseModes currentMode = CaseModes.OFF;
     boolean manualGateOpen = false;
     boolean rumbleEnabled = true;   // teleop rumbles when the shooter is up to speed; autos turn this off
@@ -34,12 +29,11 @@ public class Shooter extends Subsystem {
     PIDFCoefficients nectarPIDF = new PIDFCoefficients(300, 0, 0, 14.996);
     Gamepad gamepad1; //what is this?
 
-    public Shooter(HardwareMap hardwareMap, Drivebase driveBase, Intake intake, Gamepad gamepad) {
+    public Shooter(HardwareMap hardwareMap, Intake intake, Gamepad gamepad) {
         pollenShooter = hardwareMap.get(DcMotorEx.class, "pollenShooter");
         nectarShooter = hardwareMap.get(DcMotorEx.class, "nectarShooter");
         pollenGate = hardwareMap.get(Servo.class, "pollenGate");
         nectarGate = hardwareMap.get(Servo.class, "nectarGate");
-        this.drivebase = driveBase;
         this.intake = intake;
         pollenShooter.setDirection(DcMotorEx.Direction.REVERSE);
         pollenShooter.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
@@ -51,13 +45,13 @@ public class Shooter extends Subsystem {
         gamepad1 = gamepad; //what is this?
     }
 
+    /** In autonomous the command scheduler drives this; teleop calls {@link #update()} directly. */
+    @Override
+    public void periodic() {
+        update();
+    }
+
     public void update() {
-//        double angleError = Drivebase.angleToGoal(drivebase.getPosition(), goal);
-        double velocityDeg = drivebase.getPinpoint().getHeadingVelocity(UnnormalizedAngleUnit.DEGREES);
-        //drivebase.updateAutoAim(0);
-//        double offset_by_distance = 0.0;
-//        distance = drivebase.distanceToGoal(drivebase.getPosition(), goal);
-//        setShooterSpeed(distanceToSpeed(distance));
         boolean gateOpen = false;
         switch(currentMode){
             case OFF:
@@ -68,10 +62,6 @@ public class Shooter extends Subsystem {
                 pollenShooter.setVelocity(pollenSpeed);
                 nectarShooter.setVelocity(nectarSpeed);
                 intake.setState(Intake.CaseModes.HALF_SPEED);
-//                double errorDeg = (angleError) * (180 / Math.PI);
-//                double new_joystick_rx = errorDeg * kP - velocityDeg * kD;
-                //drivebase.updateAutoAim(new_joystick_rx);
-                //if (Math.abs((angleError) * ((180/Math.PI))) < 1 && getPollenShooterVelocity() >= speed) {
                 // Once both flywheels have reached speed, stay in the firing state until SHOOT is exited,
                 // even if the speed dips as balls pass through.
                 if (!shootReady && getPollenShooterVelocity() >= pollenSpeed && getNectarShooterVelocity() >= nectarSpeed) {
@@ -103,7 +93,7 @@ public class Shooter extends Subsystem {
         }
     }
 
-    /** Turns the "up to speed" controller rumble on or off. On by default; autos turn it off. */
+    /** Turns the "up to speed" controller rumble on or off. On by default; autos turn this off. */
     public void setRumbleEnabled(boolean enabled) {
         rumbleEnabled = enabled;
     }
@@ -155,13 +145,12 @@ public class Shooter extends Subsystem {
         return 0.15 + (degrees - 15) / (75 - 15) * (0.70 - 0.15);
     }
     public void closeGate() {
-        pollenGate.setPosition(0.1);
-        nectarGate.setPosition(0.7);
+        pollenGate.setPosition(0.65);
+        nectarGate.setPosition(1.0);
     }
     public void openGate()  {
-        pollenGate.setPosition(0.0);
-
-        nectarGate.setPosition(1.0);
+        pollenGate.setPosition(1.0);
+        nectarGate.setPosition(0.65);
     }
 
 }

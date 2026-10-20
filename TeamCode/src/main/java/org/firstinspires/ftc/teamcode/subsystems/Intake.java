@@ -22,10 +22,15 @@ public class Intake extends Subsystem {
     //
     public Intake(HardwareMap hardwareMap) {
         intake = hardwareMap.get(DcMotorEx.class, "intake");
-        intake.setDirection(DcMotorEx.Direction.REVERSE);
+//        intake.setDirection(DcMotorEx.Direction.REVERSE);
 //        frontColorSensor = hardwareMap.get(RevColorSensorV3.class, "frontColorSensor");
 //        midColorSensor = hardwareMap.get(RevColorSensorV3.class, "midColorSensor");
 //        backColorSensor = hardwareMap.get(RevColorSensorV3.class, "backColorSensor");
+    }
+
+    @Override
+    public void periodic() {
+        update();
     }
 
     public void update()

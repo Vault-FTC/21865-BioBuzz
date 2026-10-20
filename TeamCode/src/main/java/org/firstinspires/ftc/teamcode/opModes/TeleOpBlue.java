@@ -20,7 +20,7 @@ public class TeleOpBlue extends LinearOpMode {
     double cellPosition; // this tells us what position the hive is in. If 1, the upward cell is on the right when standing in the blue driver station. if zero, that side is down.
     // Where this teleop's robot is placed at the start. Used when no auto has run, and by the gamepad2 Share reset.
     // Kept per teleop so Red and Blue can use different poses if auto-aim needs them to.
-    Pose2D teleopStartPose = FieldConstants.TELEOP_START_POSE;
+    Pose2D teleopStartPose = FieldConstants.BLUE_TELEOP_START_POSE;
     Pose2D BlueGoalCaseOne = FieldConstants.BLUE_GOAL_CASE_ONE;
     Pose2D BlueGoalCaseTwo = FieldConstants.BLUE_GOAL_CASE_TWO;
 
@@ -28,7 +28,7 @@ public class TeleOpBlue extends LinearOpMode {
     public void runOpMode() throws InterruptedException {
         drivebase = new Drivebase(hardwareMap);
         intake = new Intake(hardwareMap);
-        shooter = new Shooter(hardwareMap, drivebase, intake, gamepad1);
+        shooter = new Shooter(hardwareMap, intake, gamepad1);
 
         double pollenTargetSpeed = 1225;
         double nectarTargetSpeed = 1215;
@@ -38,9 +38,10 @@ public class TeleOpBlue extends LinearOpMode {
         cellPosition = 1; //cell starts with blue alliance cell up, red alliance cell down.
 
         // Use the shared field frame (inches, origin bottom-left, center (70, 70)); see FieldConstants.
-        // If autonomous has run since the Robot Controller app started, continue from the last pose it saved
-        // (it's kept, not cleared, so restarting teleop still uses it). Otherwise start at teleopStartPose
-        // (the robot placed turned 180 degrees from the autonomous start). Gamepad2 Share resets to teleopStartPose.
+        // If autonomous has run, continue from the last pose it saved. Teleop keeps updating that pose while
+        // it runs, so restarting teleop also resumes from where the robot actually is. Otherwise, start at
+        // teleopStartPose (the same spot and heading as this alliance's autonomous start). Gamepad2 Share
+        // resets to teleopStartPose when the robot has been re-placed.
         if (PoseStorage.currentPose != null) {
             drivebase.setCurrentPose(PoseStorage.currentPose);
         } else {
@@ -49,7 +50,7 @@ public class TeleOpBlue extends LinearOpMode {
             drivebase.setCurrentPose(teleopStartPose);
         }
         // Field direction the drive stick pushes toward.
-        double stickUpHeadingRad = Math.toRadians(FieldConstants.TELEOP_STICK_UP_HEADING_DEG);
+        double stickUpHeadingRad = Math.toRadians(FieldConstants.BLUE_STICK_UP_HEADING_DEG);
 
         waitForStart();
 
@@ -57,6 +58,7 @@ public class TeleOpBlue extends LinearOpMode {
 
         while (opModeIsActive()) {
             drivebase.update();
+            PoseStorage.currentPose = drivebase.getPosition();   // keep the handoff pose current for a teleop restart
 
             // Options: re-zero the heading with the robot placed in the teleop starting orientation.
             if (gamepad1.optionsWasPressed()) {
@@ -83,10 +85,10 @@ public class TeleOpBlue extends LinearOpMode {
             } else if (gamepad1.right_trigger_pressed) {
                 shooter.setState(Shooter.CaseModes.SHOOT);
             } else {
-                shooter.setState(Shooter.CaseModes.SHOOT_GATE_CLOSED);
+                shooter.setState(Shooter.CaseModes.OFF); // Should be shoot_gate_closed
             }
 
-            drivebase.drive(y, x, rx, stickUpHeadingRad);
+            drivebase.drive(-y, -x, rx, stickUpHeadingRad);
 
             // DRIVER TWO
             if (gamepad2.squareWasPressed()) {
