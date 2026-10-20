@@ -33,7 +33,7 @@ public class redAutoPositionTest extends LinearOpMode {
         drivebase.drive(0, 0, 0);
 
         // Same start pose as redAuto. Keep the two in sync if you change it.
-        Pose2D start = new Pose2D(DistanceUnit.INCH, 60, 8, AngleUnit.DEGREES, 90);
+        Pose2D start = new Pose2D(DistanceUnit.INCH, 59, 8.5, AngleUnit.DEGREES, 90);
         resetToStart(start);
 
         // Same waypoints as redAuto. Keep the two in sync if you change them.
@@ -41,7 +41,7 @@ public class redAutoPositionTest extends LinearOpMode {
         Location[] waypoints = {
                 new Location(24, 8, start.getHeading(AngleUnit.DEGREES)),
                 new Location(32, 99, 90),
-                new Location(10, 99, 90),
+                new Location(15, 99, 90),
         };
         int step = 0;
 

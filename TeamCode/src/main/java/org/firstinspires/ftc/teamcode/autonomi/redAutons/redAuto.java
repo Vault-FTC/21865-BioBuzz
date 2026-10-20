@@ -20,12 +20,13 @@ import org.firstinspires.ftc.teamcode.subsystems.Shooter;
  */
 @Autonomous
 public class redAuto extends LinearOpMode {
-    static final double POLLEN_SPEED = 1225;
-    static final double NECTAR_SPEED = 1215;
+    static final double POLLEN_SPEED = 1300;
+    static final double NECTAR_SPEED = 1250;
 
     static final double SPIN_UP_TIMEOUT_S = 3.0;   // if the flywheels never report full speed, feed anyway after this
     static final double FEED_TIME_S = 4.0;         // how long to feed once the gates open
-    static final double DRIVE_TIMEOUT_S = 4.0;     // give up on a drive if it never settles
+    static final double DRIVE_BASE_TIMEOUT_S = 2.0;      // each drive gets this long...
+    static final double DRIVE_SECONDS_PER_INCH = 0.15;   // ...plus this much per inch to cover (a guess; tune it)
 
     // How far to drive left (toward -X, decreasing X) for the first move
     static final double LEAVE_LEFT_IN = 24;
@@ -44,7 +45,7 @@ public class redAuto extends LinearOpMode {
         // Put the odometry in the shared field frame.
         drivebase.getPinpoint().resetPosAndIMU();
         sleep(300);   // let the Pinpoint finish its IMU reset before we write a pose to it
-        Pose2D start = new Pose2D(DistanceUnit.INCH, 60, 8, AngleUnit.DEGREES, 90);
+        Pose2D start = new Pose2D(DistanceUnit.INCH, 59, 8.5, AngleUnit.DEGREES, 90);
         drivebase.setCurrentPose(start);
         PoseStorage.currentPose = start;
 
@@ -63,12 +64,22 @@ public class redAuto extends LinearOpMode {
                 99,
                 90);
         Location park = new Location(
-                15,
+                10,
                 99,
                 90);
 
         shooter.setTargetSpeeds(POLLEN_SPEED, NECTAR_SPEED);
 
+        // Show the live pose during init so you can confirm the heading before pressing start.
+        while (!isStarted() && !isStopRequested()) {
+            drivebase.update();
+            telemetry.addLine("Place the robot at the start pose, then press start.");
+            telemetry.addData("Expected start", "X: %.1f  Y: %.1f  H: %.0f",
+                    start.getX(FieldConstants.DISTANCE_UNIT), start.getY(FieldConstants.DISTANCE_UNIT),
+                    start.getHeading(AngleUnit.DEGREES));
+            telemetry.addData("Position", drivebase.getPositionTelemetry());
+            telemetry.update();
+        }
         waitForStart();
         if (isStopRequested()) return;
 
@@ -76,9 +87,9 @@ public class redAuto extends LinearOpMode {
         shooter.setState(Shooter.CaseModes.SHOOT_GATE_CLOSED);
 
         shoot();
-        driveTo(moveLeft);
-        driveTo(driveForwards);
-        driveTo(park);
+        driveTo("moveLeft", moveLeft);
+        driveTo("driveForwards", driveForwards);
+        driveTo("park", park);
 
         // Nothing here ends the auto: keep the flywheels spinning and hold still until the driver station's
         // 30 second timer stops the opmode.
@@ -133,18 +144,43 @@ public class redAuto extends LinearOpMode {
         intake.update();
     }
 
-    /** Drives to a field target with Drivebase.driveToPosition until it arrives or times out. */
-    void driveTo(Location target) {
+    /**
+     * Drives to a field target with Drivebase.driveToPosition until it arrives or times out. The timeout grows
+     * with the distance, and a one-line result (arrived or timed out, and the distance before and after) is added
+     * to the Driver Station log so you can tell a short timeout from a wrong-way drive: if the distance after is
+     * bigger than the distance before, the robot is driving away from the target.
+     */
+    void driveTo(String label, Location target) {
+        drivebase.update();
+        double startDistance = distanceTo(target);
+        double timeoutS = DRIVE_BASE_TIMEOUT_S + startDistance * DRIVE_SECONDS_PER_INCH;
         ElapsedTime timer = new ElapsedTime();
-        while (opModeIsActive() && timer.seconds() < DRIVE_TIMEOUT_S) {
+        boolean arrived = false;
+        while (opModeIsActive() && timer.seconds() < timeoutS) {
             drivebase.update();
             updateSubsystems();
-            if (drivebase.isAtPosition(target, 1, 2)) break;
+            if (drivebase.isAtPosition(target, 1, 2)) {
+                arrived = true;
+                break;
+            }
             drivebase.driveToPosition(target, telemetry);
-            telemetry.addData("Step", "Driving");
+            telemetry.addData("Step", "%s (%.1f / %.1f s)", label, timer.seconds(), timeoutS);
             addPoseTelemetry();
         }
         drivebase.drive(0, 0, 0);
+        drivebase.update();
+        Pose2D pose = drivebase.getPosition();
+        telemetry.log().add(String.format("%s: %s in %.1fs, dist %.1f -> %.1f in, pose X %.1f Y %.1f H %.0f",
+                label, arrived ? "arrived" : "TIMED OUT", timer.seconds(), startDistance, distanceTo(target),
+                pose.getX(FieldConstants.DISTANCE_UNIT), pose.getY(FieldConstants.DISTANCE_UNIT),
+                pose.getHeading(AngleUnit.DEGREES)));
+    }
+
+    /** Straight-line distance from the robot to a target, in field inches. */
+    double distanceTo(Location target) {
+        Pose2D pose = drivebase.getPosition();
+        return Math.hypot(target.x - pose.getX(FieldConstants.DISTANCE_UNIT),
+                target.y - pose.getY(FieldConstants.DISTANCE_UNIT));
     }
 
     /** Holds the robot on a spot, cutting power once it is close enough so it doesn't jitter. */

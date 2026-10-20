@@ -31,11 +31,11 @@ public final class FieldConstants {
     public static final Pose2D FIELD_CENTER =
             new Pose2D(DistanceUnit.INCH, FIELD_CENTER_X, FIELD_CENTER_Y, AngleUnit.DEGREES, 90);
 
-    // Where the robot starts and which way it faces: (60, 8) facing up the field (+Y), the same
+    // Where the robot starts and which way it faces: (59, 8.5) facing up the field (+Y), the same
     // start redAuto uses. The heading matters: field-relative moves (like "decrease X") only go the
     // right physical direction if this heading matches how the robot is actually placed.
     public static final Pose2D START_POSE =
-            new Pose2D(DistanceUnit.INCH, 60, 8, AngleUnit.DEGREES, 90);
+            new Pose2D(DistanceUnit.INCH, 59, 8.5, AngleUnit.DEGREES, 90);
 
     // Pose a standalone teleop starts from. The robot is placed turned 180 degrees from the autonomous start,
     // so this uses the true (reversed) heading. That keeps the heading consistent with the pose autonomous

@@ -42,16 +42,31 @@ public class TeleOpRed extends LinearOpMode {
         // If autonomous has run since the Robot Controller app started, continue from the last pose it saved
         // (it's kept, not cleared, so restarting teleop still uses it). Otherwise start at teleopStartPose
         // (the robot placed turned 180 degrees from the autonomous start). Gamepad2 Share resets to teleopStartPose.
+        String poseSource;
         if (PoseStorage.currentPose != null) {
             drivebase.setCurrentPose(new Pose2D(DistanceUnit.INCH, PoseStorage.currentPose.getX(DistanceUnit.INCH), PoseStorage.currentPose.getY(DistanceUnit.INCH), AngleUnit.DEGREES,PoseStorage.currentPose.getHeading(AngleUnit.DEGREES) + 270));
+            poseSource = "saved auto pose (heading + 270, from your edit)";
         } else {
             drivebase.getPinpoint().resetPosAndIMU();
             sleep(300);   // let the Pinpoint finish its IMU reset before we write a pose to it
             drivebase.setCurrentPose(teleopStartPose);
+            poseSource = "teleop start pose (no auto saved one)";
         }
         // Field direction the drive stick pushes toward.
         double stickUpHeadingRad = Math.toRadians(FieldConstants.TELEOP_STICK_UP_HEADING_DEG);
 
+        // Show which pose was loaded during init. Not where the last auto ended? Press gamepad2 Share to reset.
+        while (!isStarted() && !isStopRequested()) {
+            drivebase.update();
+            if (gamepad2.shareWasPressed()) {
+                drivebase.setCurrentPose(teleopStartPose);
+                poseSource = "teleop start pose (Share pressed)";
+            }
+            telemetry.addData("Pose source", poseSource);
+            telemetry.addData("Position", drivebase.getPositionTelemetry());
+            telemetry.addLine("Robot not where the last auto ended? Press gamepad2 Share.");
+            telemetry.update();
+        }
         waitForStart();
 
         if (isStopRequested()) return;

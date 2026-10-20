@@ -171,16 +171,19 @@ public class Drivebase extends Subsystem {
         if (distance > DRIVE_DEADBAND_IN) {
             speed = Math.max(speed, DRIVE_MIN_POWER);
         }
-        double xPower = distance > 1e-6 ? speed * xError / distance : 0;
-        double yPower = distance > 1e-6 ? speed * yError / distance : 0;
-        double turnPower = Math.max(Math.min(headingError * TURN_P, TURN_MAX_POWER), -TURN_MAX_POWER);
+//        double xPower = distance > 1e-6 ? speed * xError / distance : 0;
+//        double yPower = distance > 1e-6 ? speed * yError / distance : 0;
+
+        double xPower = Math.min(0.2 ,xError * DRIVE_P);
+        double yPower = Math.min(0.2, yError * DRIVE_P);
+        double turnPower = 0; // Math.max(Math.min(headingError * TURN_P, TURN_MAX_POWER), -TURN_MAX_POWER);
 
         if (telemetry != null) {
             telemetry.addData("Target", "X: %.1f  Y: %.1f  H: %.1f", target.x, target.y, target.headingDegrees);
             telemetry.addData("Error", "X: %.1f  Y: %.1f  H: %.1f", xError, yError, headingError);
         }
 
-        driveField(-xPower, -yPower, turnPower);
+        driveField(-xPower, yPower, turnPower);
     }
     public void brake() {
         frontLeftMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
