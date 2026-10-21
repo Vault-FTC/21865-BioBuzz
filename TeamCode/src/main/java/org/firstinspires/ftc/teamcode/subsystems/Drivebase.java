@@ -1,5 +1,7 @@
 package org.firstinspires.ftc.teamcode.subsystems;
 
+import com.pedropathing.revhub.drivetrains.MecanumConfig;
+import com.pedropathing.revhub.localizers.PinpointConfig;
 import com.qualcomm.hardware.gobilda.GoBildaPinpointDriver;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
@@ -12,6 +14,7 @@ import org.firstinspires.ftc.robotcore.external.navigation.Pose2D;
 import org.firstinspires.ftc.teamcode.FieldConstants;
 import org.firstinspires.ftc.teamcode.Location;
 import org.firstinspires.ftc.teamcode.commandSystem.Subsystem;
+import org.firstinspires.ftc.teamcode.pedro.Constants;
 
 public class Drivebase extends Subsystem {
 
@@ -21,11 +24,16 @@ public class Drivebase extends Subsystem {
 
     double modify_joystick_rotate = 0.0;
 
+    /**
+     * The motor names and directions, and the Pinpoint name, pod offsets, pod directions and pod type, all come
+     * from pedro/Constants.java (the AutoTune results), so there is one place to change them.
+     */
     public Drivebase(HardwareMap hardwareMap) {
-        frontLeftMotor = hardwareMap.get(DcMotorEx.class, "frontLeftMotor");
-        frontRightMotor = hardwareMap.get(DcMotorEx.class, "frontRightMotor");
-        backLeftMotor = hardwareMap.get(DcMotorEx.class, "backLeftMotor");
-        backRightMotor = hardwareMap.get(DcMotorEx.class, "backRightMotor");
+        MecanumConfig wheels = Constants.drivetrainConfig;
+        frontLeftMotor = hardwareMap.get(DcMotorEx.class, wheels.frontLeftName.get());
+        frontRightMotor = hardwareMap.get(DcMotorEx.class, wheels.frontRightName.get());
+        backLeftMotor = hardwareMap.get(DcMotorEx.class, wheels.backLeftName.get());
+        backRightMotor = hardwareMap.get(DcMotorEx.class, wheels.backRightName.get());
 
         frontLeftMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         frontRightMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
@@ -37,18 +45,21 @@ public class Drivebase extends Subsystem {
         backLeftMotor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         backRightMotor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
 
-// Reverse one side of motors if needed (depends on robot configuration)
-        frontLeftMotor.setDirection(DcMotorEx.Direction.REVERSE);
-        backLeftMotor.setDirection(DcMotorEx.Direction.REVERSE);
-// Odometry constants and such
-        Pinpoint = hardwareMap.get(GoBildaPinpointDriver.class,"pinpoint");
-        //odo.setOffsets(205.71207, -15.175, DistanceUnit.MM);
-        Pinpoint.setOffsets(0.0, 31.5, DistanceUnit.MM); // x-pod 0 mm, y-pod 31.5 mm
-        Pinpoint.setEncoderResolution(GoBildaPinpointDriver.GoBildaOdometryPods.goBILDA_4_BAR_POD);
-        Pinpoint.setEncoderDirections(
-                GoBildaPinpointDriver.EncoderDirection.FORWARD,
-                GoBildaPinpointDriver.EncoderDirection.REVERSED);
-        //  odo.resetPosAndIMU();
+        frontLeftMotor.setDirection(wheels.frontLeftDirection.get());
+        frontRightMotor.setDirection(wheels.frontRightDirection.get());
+        backLeftMotor.setDirection(wheels.backLeftDirection.get());
+        backRightMotor.setDirection(wheels.backRightDirection.get());
+
+        // Pinpoint, set up exactly the way Pedro's PinpointLocalizer sets it up from the same config.
+        PinpointConfig pods = Constants.localizerConfig;
+        Pinpoint = hardwareMap.get(GoBildaPinpointDriver.class, pods.name.get());
+        Pinpoint.setOffsets(pods.xPodOffset.get(), pods.yPodOffset.get(), pods.offsetUnits.get());
+        if (pods.ticksPerUnit.get().isPresent()) {
+            Pinpoint.setEncoderResolution(pods.ticksPerUnit.get().getAsDouble(), pods.encoderResolutionUnit.get());
+        } else {
+            Pinpoint.setEncoderResolution(pods.podType.get());
+        }
+        Pinpoint.setEncoderDirections(pods.xPodDirection.get(), pods.yPodDirection.get());
     }
 
     public void setToCoastMode() {

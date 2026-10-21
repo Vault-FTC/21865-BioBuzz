@@ -9,7 +9,7 @@ import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.Pose2D;
 import org.firstinspires.ftc.teamcode.FieldConstants;
 import org.firstinspires.ftc.teamcode.commandSystem.Subsystem;
-import org.firstinspires.ftc.teamcode.pedro.PedroConstants;
+import org.firstinspires.ftc.teamcode.pedro.Constants;
 
 /**
  * Owns the Pedro Pathing follower for autonomous.
@@ -22,7 +22,7 @@ public class FollowerSubsystem extends Subsystem {
     private final Follower follower;
 
     public FollowerSubsystem(HardwareMap hardwareMap) {
-        follower = PedroConstants.create(hardwareMap);
+        follower = Constants.create(hardwareMap);
     }
 
     public Follower getFollower() {

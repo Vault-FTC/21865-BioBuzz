@@ -49,6 +49,8 @@ public class TeleOpBlue extends LinearOpMode {
             sleep(300);   // let the Pinpoint finish its IMU reset before we write a pose to it
             drivebase.setCurrentPose(teleopStartPose);
         }
+        // NOTE: the SHOOTER end is the robot's front. The Pinpoint heading and "forward" in the drive code both
+        // refer to that end.
         // Field direction the drive stick pushes toward.
         double stickUpHeadingRad = Math.toRadians(FieldConstants.BLUE_STICK_UP_HEADING_DEG);
 
