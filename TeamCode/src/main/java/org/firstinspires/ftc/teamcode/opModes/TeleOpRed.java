@@ -30,8 +30,8 @@ public class TeleOpRed extends LinearOpMode {
         intake = new Intake(hardwareMap);
         shooter = new Shooter(hardwareMap, intake, gamepad1);
 
-        double pollenTargetSpeed = 1225;
-        double nectarTargetSpeed = 1215;
+        double pollenTargetSpeed = Shooter.POLLEN_SPEED;   // defaults live in Shooter.java
+        double nectarTargetSpeed = Shooter.NECTAR_SPEED;
         double pollenSpeedAdjustment = 0;
         double nectarSpeedAdjustment = 0;
         boolean pollenSelected = true;   // which shooter gamepad2's d-pad adjusts
@@ -42,18 +42,32 @@ public class TeleOpRed extends LinearOpMode {
         // it runs, so restarting teleop also resumes from where the robot actually is. Otherwise start at
         // teleopStartPose (the same spot and heading as this alliance's autonomous start). Gamepad2 Share
         // resets to teleopStartPose when the robot has been re-placed.
+        String poseSource;
         if (PoseStorage.currentPose != null) {
             drivebase.setCurrentPose(PoseStorage.currentPose);
+            poseSource = "saved auto pose";
         } else {
             drivebase.getPinpoint().resetPosAndIMU();
             sleep(300);   // let the Pinpoint finish its IMU reset before we write a pose to it
             drivebase.setCurrentPose(teleopStartPose);
+            poseSource = "teleop start pose (no auto saved one)";
         }
         // NOTE: the SHOOTER end is the robot's front. The Pinpoint heading and "forward" in the drive code both
         // refer to that end.
         // Field direction the drive stick pushes toward.
         double stickUpHeadingRad = Math.toRadians(FieldConstants.RED_STICK_UP_HEADING_DEG);
 
+        // Init loop: shows which pose was loaded. Robot not where the last auto ended? Press gamepad2 Share.
+        while (!isStarted() && !isStopRequested()) {
+            drivebase.update();
+            if (gamepad2.shareWasPressed()) {
+                drivebase.setCurrentPose(teleopStartPose);
+                poseSource = "teleop start pose (Share pressed)";
+            }
+            telemetry.addData("Pose source", poseSource);
+            telemetry.addData("Position", drivebase.getPositionTelemetry());
+            telemetry.update();
+        }
         waitForStart();
 
         if (isStopRequested()) return;

@@ -19,8 +19,12 @@ public class Shooter extends Subsystem {
     private final Servo pollenGate;
     private final Servo nectarGate;
     private final Intake intake;
-    double pollenSpeed;
-    double nectarSpeed;
+    // Default flywheel target speeds for teleop and autonomous. Change them here to change them everywhere.
+    public static final double POLLEN_SPEED = 1350;
+    public static final double NECTAR_SPEED = 1400;
+
+    double pollenSpeed = POLLEN_SPEED;
+    double nectarSpeed = NECTAR_SPEED;
     CaseModes currentMode = CaseModes.OFF;
     boolean manualGateOpen = false;
     boolean rumbleEnabled = true;   // teleop rumbles when the shooter is up to speed; autos turn this off
@@ -61,7 +65,7 @@ public class Shooter extends Subsystem {
             case SHOOT:
                 pollenShooter.setVelocity(pollenSpeed);
                 nectarShooter.setVelocity(nectarSpeed);
-                intake.setState(Intake.CaseModes.HALF_SPEED);
+                //intake.setState(Intake.CaseModes.HALF_SPEED);
                 // Once both flywheels have reached speed, stay in the firing state until SHOOT is exited,
                 // even if the speed dips as balls pass through.
                 if (!shootReady && getPollenShooterVelocity() >= pollenSpeed && getNectarShooterVelocity() >= nectarSpeed) {
@@ -118,6 +122,14 @@ public class Shooter extends Subsystem {
 //        return speed;
 //    }
     /** Stores the target speeds without spinning the motors; update() applies them in the SHOOT modes. */
+    public double getTargetPollenSpeed() {
+        return pollenSpeed;
+    }
+
+    public double getTargetNectarSpeed() {
+        return nectarSpeed;
+    }
+
     public void setTargetSpeeds(double pollenSpeed, double nectarSpeed){
         this.pollenSpeed = pollenSpeed;
         this.nectarSpeed = nectarSpeed;
@@ -145,12 +157,12 @@ public class Shooter extends Subsystem {
         return 0.15 + (degrees - 15) / (75 - 15) * (0.70 - 0.15);
     }
     public void closeGate() {
-        pollenGate.setPosition(0.65);
+        pollenGate.setPosition(0.7);
         nectarGate.setPosition(1.0);
     }
     public void openGate()  {
         pollenGate.setPosition(1.0);
-        nectarGate.setPosition(0.65);
+        nectarGate.setPosition(0.60);
     }
 
 }

@@ -46,9 +46,9 @@ public final class FieldConstants {
     public static final Pose2D BLUE_TELEOP_START_POSE = BLUE_START_POSE;
 
     // Field direction (degrees) that pushing the teleop drive stick UP moves the robot toward: away from
-    // each alliance's driver station. Red drives toward +Y, blue toward -Y.
-    public static final double RED_STICK_UP_HEADING_DEG = 90;
-    public static final double BLUE_STICK_UP_HEADING_DEG = 270;
+    // each alliance's driver station. Red drivers stand at -X so red drives toward +X, blue toward -X.
+    public static final double RED_STICK_UP_HEADING_DEG = 0;
+    public static final double BLUE_STICK_UP_HEADING_DEG = 180;
 
     // Teleop auto-aim points, in field inches. "Case one" is the goal's position at the start of the
     // match; "case two" is after the goal tips (toggled with gamepad2 Square -> cellPosition).

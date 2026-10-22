@@ -32,4 +32,10 @@ public class FollowPathCommand extends Command {
     public boolean isFinished() {
         return !followerSubsystem.isBusy();
     }
+
+    /** If the command is cancelled (for example by a timeout), stop the follower so it doesn't keep driving the path. */
+    @Override
+    public void end(boolean interrupted) {
+        if (interrupted) followerSubsystem.stop();
+    }
 }

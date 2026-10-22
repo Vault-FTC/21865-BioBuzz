@@ -73,6 +73,15 @@ public abstract class Command {
         return state != State.UNSCHEDULED;
     }
 
+    /**
+     * Optional timeout for this command, in milliseconds: if it is not finished by then it is cancelled and the
+     * sequence moves on. A command that never calls this has no timeout.
+     * Example: {@code new DelayCommand(shooter::isShootReady).withTimeout(3000)}
+     */
+    public Command withTimeout(double timeoutMs) {
+        return new SequentialCommandGroup(this).setTimeout(timeoutMs);
+    }
+
     public final void cancel() {
         if (state != State.UNSCHEDULED) {
             end(true);
