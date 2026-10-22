@@ -37,7 +37,9 @@ public class BlueAuto extends LinearOpMode {
 
     // Universal step timeout (ms): any step in timedRoute(...) that hasn't finished by then is cancelled and the
     // route moves on. 0 = off (no universal timeout).
-    static final double STEP_TIMEOUT_MS = 0;
+    static final double STEP_TIMEOUT_MS = 4000;
+    // I made the step timeout four seconds just randomly.
+    // We should test and tune this and change it to be what we really want, or it will cut some paths off.
 
     private final PoseFactory poseFactory = PoseFactory.degrees().mirrorAroundPoint(70.75, 70.75);
 

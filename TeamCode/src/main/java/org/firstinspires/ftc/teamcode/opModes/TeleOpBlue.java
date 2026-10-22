@@ -148,6 +148,8 @@ public class TeleOpBlue extends LinearOpMode {
             intake.setState(Intake.CaseModes.ON);
         } else if (gamepad1.square) {
             intake.setState(Intake.CaseModes.REVERSE);
+        } else if (gamepad1.leftTriggerWasPressed()) {
+            intake.setState(Intake.CaseModes.INTAKE_FROM_FLOWER);
         } else {
             intake.setState(Intake.CaseModes.OFF);
         }

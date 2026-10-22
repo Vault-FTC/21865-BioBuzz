@@ -6,15 +6,17 @@ import com.qualcomm.hardware.rev.RevColorSensorV3;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DigitalChannel;
 import com.qualcomm.robotcore.hardware.HardwareMap;
+import com.qualcomm.robotcore.hardware.Servo;
 
 import org.firstinspires.ftc.teamcode.commandSystem.Subsystem;
 
 public class Intake extends Subsystem {
     public enum CaseModes
     {
-        OFF, REVERSE, ON, HALF_SPEED, SIXTY_PERCENT_SPEED
+        OFF, REVERSE, ON, HALF_SPEED, SIXTY_PERCENT_SPEED, INTAKE_FROM_FLOWER
     }
     private DcMotorEx intake;
+    private Servo flowerIntake; // uncomment out flower intake lines when we actually get flower intake into the code
     private RevColorSensorV3 frontColorSensor, midColorSensor, backColorSensor;
     CaseModes currentMode = CaseModes.OFF;
 
@@ -22,6 +24,7 @@ public class Intake extends Subsystem {
     //
     public Intake(HardwareMap hardwareMap) {
         intake = hardwareMap.get(DcMotorEx.class, "intake");
+//        flowerIntake = hardwareMap.get(Servo.class, "flowerIntake");
 //        intake.setDirection(DcMotorEx.Direction.REVERSE);
 //        frontColorSensor = hardwareMap.get(RevColorSensorV3.class, "frontColorSensor");
 //        midColorSensor = hardwareMap.get(RevColorSensorV3.class, "midColorSensor");
@@ -41,6 +44,7 @@ public class Intake extends Subsystem {
                 break;
             case OFF:
                 intake.setPower(0);
+//                flowerIntake.setPosition(1);
                 break;
             case HALF_SPEED:
                 intake.setPower(0.5);
@@ -48,6 +52,9 @@ public class Intake extends Subsystem {
             case SIXTY_PERCENT_SPEED:
                 intake.setPower(0.6);
                 break;
+            case INTAKE_FROM_FLOWER:
+                intake.setPower(1);
+//                flowerIntake.setPosition(0);
             case REVERSE:
                 intake.setPower(-0.6);
                 break;
