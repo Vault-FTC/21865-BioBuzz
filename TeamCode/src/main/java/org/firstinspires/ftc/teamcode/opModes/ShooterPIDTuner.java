@@ -4,6 +4,7 @@ import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
+import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.PIDFCoefficients;
 import com.qualcomm.robotcore.hardware.Servo;
 
@@ -19,25 +20,29 @@ public class ShooterPIDTuner extends OpMode {
         final String name;
         final DcMotorEx motor;
         double targetVelocity = 0;
-        double P = 0;
-        double F = 14.5;
+        double P = 0.0;
+        double F = 12.465;
 
-        Flywheel(String name, DcMotorEx motor) {
+        final DcMotorEx.Direction direction;
+
+        Flywheel(String name, DcMotorEx motor, DcMotorEx.Direction direction) {
             this.name = name;
             this.motor = motor;
+            this.direction = direction;
         }
 
         void apply() {
+            motor.setDirection(direction);
             motor.setPIDFCoefficients(DcMotor.RunMode.RUN_USING_ENCODER, new PIDFCoefficients(P, 0, 0, F));
             motor.setVelocity(targetVelocity);
         }
     }
 
     // Gate positions copied from Shooter.openGate()/closeGate(); keep them in sync if those change.
-    static final double POLLEN_GATE_CLOSED = 0.175;
-    static final double POLLEN_GATE_OPEN = 0.26;
-    static final double NECTAR_GATE_CLOSED = 0.5;
-    static final double NECTAR_GATE_OPEN = 1.0;
+    static final double POLLEN_GATE_CLOSED = 0.7;
+    static final double POLLEN_GATE_OPEN = 1.0;
+    static final double NECTAR_GATE_CLOSED = 1.0;
+    static final double NECTAR_GATE_OPEN = 0.6;
 
     public DcMotorEx intake;
     Servo pollenGate;
@@ -47,16 +52,16 @@ public class ShooterPIDTuner extends OpMode {
     Flywheel nectar;
     Flywheel selected;
 
-    double[] pidStepSizes = {10.0, 1.0, 0.1, 0.01, 0.001, 0.0001};
+    double[] pidStepSizes = {50, 10.0, 1.0, 0.1, 0.01, 0.001, 0.0001};
     int pidStepIndex = 0;
 
-    double[] velocityStepSizes = {10.0, 50.0, 100.0, 500.0, 950, 1000.0};
+    double[] velocityStepSizes = {10.0, 50.0, 100.0, 500.0, 950.0, 1000.0, 1350.0, 1400.0};
     int velocityStepIndex = 0;
 
     @Override
     public void init() {
-        pollen = new Flywheel("Pollen", hardwareMap.get(DcMotorEx.class, "pollenShooter"));
-        nectar = new Flywheel("Nectar", hardwareMap.get(DcMotorEx.class, "nectarShooter"));
+        pollen = new Flywheel("Pollen", hardwareMap.get(DcMotorEx.class, "pollenShooter"), DcMotorEx.Direction.REVERSE);
+        nectar = new Flywheel("Nectar", hardwareMap.get(DcMotorEx.class, "nectarShooter"), DcMotorEx.Direction.FORWARD);
         intake = hardwareMap.get(DcMotorEx.class, "intake");
         pollenGate = hardwareMap.get(Servo.class, "pollenGate");
         nectarGate = hardwareMap.get(Servo.class, "nectarGate");
@@ -67,7 +72,6 @@ public class ShooterPIDTuner extends OpMode {
             f.motor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
             f.apply();
         }
-        intake.setDirection(DcMotorEx.Direction.REVERSE);
         setGates(false);
         telemetry.addLine("Init Complete");
     }

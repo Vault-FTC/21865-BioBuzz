@@ -39,7 +39,7 @@ public class TeleOpBlue extends LinearOpMode {
 
         // Use the shared field frame (inches, origin bottom-left, center (70, 70)); see FieldConstants.
         // If autonomous has run, continue from the last pose it saved. Teleop keeps updating that pose while
-        // it runs, so restarting teleop also resumes from where the robot actually is. Otherwise, start at
+        // it runs, so restarting teleop also resumes from where the robot actually is. Otherwise start at
         // teleopStartPose (the same spot and heading as this alliance's autonomous start). Gamepad2 Share
         // resets to teleopStartPose when the robot has been re-placed.
         String poseSource;
@@ -101,7 +101,7 @@ public class TeleOpBlue extends LinearOpMode {
             } else if (gamepad1.right_trigger_pressed) {
                 shooter.setState(Shooter.CaseModes.SHOOT);
             } else {
-                shooter.setState(Shooter.CaseModes.OFF); // Should be shoot_gate_closed
+                shooter.setState(Shooter.CaseModes.SHOOT_GATE_CLOSED);
             }
 
             drivebase.drive(-y, -x, rx, stickUpHeadingRad);
@@ -144,12 +144,15 @@ public class TeleOpBlue extends LinearOpMode {
     }
 
     public void doIntake() {
+        if (gamepad2.crossWasPressed()) {
+            intake.toggleFlowerArm();
+        }
+
         if (gamepad1.left_bumper) {
             intake.setState(Intake.CaseModes.ON);
         } else if (gamepad1.square) {
             intake.setState(Intake.CaseModes.REVERSE);
-        } else if (gamepad1.leftTriggerWasPressed()) {
-            intake.setState(Intake.CaseModes.INTAKE_FROM_FLOWER);
+            shooter.openGate();
         } else {
             intake.setState(Intake.CaseModes.OFF);
         }

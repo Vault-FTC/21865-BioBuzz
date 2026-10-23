@@ -145,10 +145,15 @@ public class TeleOpRed extends LinearOpMode {
     }
 
     public void doIntake() {
+        if (gamepad2.crossWasPressed()) {
+            intake.toggleFlowerArm();
+        }
+
         if (gamepad1.left_bumper) {
             intake.setState(Intake.CaseModes.ON);
         } else if (gamepad1.square) {
             intake.setState(Intake.CaseModes.REVERSE);
+            shooter.openGate();
         } else {
             intake.setState(Intake.CaseModes.OFF);
         }
