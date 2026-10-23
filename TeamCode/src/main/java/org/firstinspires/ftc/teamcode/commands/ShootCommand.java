@@ -44,7 +44,7 @@ public class ShootCommand extends Command {
         previousPollenSpeed = shooter.getTargetPollenSpeed();
         previousNectarSpeed = shooter.getTargetNectarSpeed();
         shooter.setTargetSpeeds(pollenSpeed, nectarSpeed);
-        shooter.setState(Shooter.CaseModes.SHOOT);
+        shooter.setState(Shooter.CaseModes.AUTO_SHOOT);
         feeding = false;
         phaseTimer.reset();
     }

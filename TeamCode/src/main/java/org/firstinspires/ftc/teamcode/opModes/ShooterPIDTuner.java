@@ -21,7 +21,7 @@ public class ShooterPIDTuner extends OpMode {
         final DcMotorEx motor;
         double targetVelocity = 0;
         double P = 0.0;
-        double F = 12.465;
+        double F = 13.453;
 
         final DcMotorEx.Direction direction;
 
@@ -55,7 +55,7 @@ public class ShooterPIDTuner extends OpMode {
     double[] pidStepSizes = {50, 10.0, 1.0, 0.1, 0.01, 0.001, 0.0001};
     int pidStepIndex = 0;
 
-    double[] velocityStepSizes = {10.0, 50.0, 100.0, 500.0, 950.0, 1000.0, 1350.0, 1400.0};
+    double[] velocityStepSizes = {10.0, 50.0, 100.0, 500.0, 950.0, 1000.0, 1300.0, 1310.0};
     int velocityStepIndex = 0;
 
     @Override
@@ -120,7 +120,7 @@ public class ShooterPIDTuner extends OpMode {
         // Left bumper: intake in (feed a game piece so you're tuning under realistic load).
         // Left trigger: outtake.
         if (gamepad1.left_bumper) {
-            intake.setPower(1);
+            intake.setPower(0.5);
         } else if (gamepad1.left_trigger_pressed) {
             intake.setPower(-1);
         } else {

@@ -11,7 +11,7 @@ import org.firstinspires.ftc.teamcode.commandSystem.Subsystem;
 
 public class Shooter extends Subsystem {
     public enum CaseModes {
-        OFF, SHOOT, SHOOT_GATE_CLOSED, REVERSE
+        OFF, SHOOT, SHOOT_GATE_CLOSED, REVERSE, AUTO_SHOOT
     }
 
     private final DcMotorEx pollenShooter;
@@ -20,7 +20,7 @@ public class Shooter extends Subsystem {
     private final Servo nectarGate;
     private final Intake intake;
     // Default flywheel target speeds for teleop and autonomous. Change them here to change them everywhere.
-    public static final double POLLEN_SPEED = 1350;
+    public static final double POLLEN_SPEED = 1310;
     public static final double NECTAR_SPEED = 1300;
 
     double pollenSpeed = POLLEN_SPEED;
@@ -29,7 +29,7 @@ public class Shooter extends Subsystem {
     boolean manualGateOpen = false;
     boolean rumbleEnabled = true;   // teleop rumbles when the shooter is up to speed; autos turn this off
     boolean shootReady = false;   // latched once the flywheels reach speed in SHOOT; cleared when leaving SHOOT
-    PIDFCoefficients pollenPIDF = new PIDFCoefficients(275, 0, 0, 13.47);
+    PIDFCoefficients pollenPIDF = new PIDFCoefficients(200, 0, 0, 13.453); // p=265
     PIDFCoefficients nectarPIDF = new PIDFCoefficients(150, 0, 0, 11.2);
     Gamepad gamepad1; //what is this?
 
@@ -68,12 +68,27 @@ public class Shooter extends Subsystem {
                 //intake.setState(Intake.CaseModes.HALF_SPEED);
                 // Once both flywheels have reached speed, stay in the firing state until SHOOT is exited,
                 // even if the speed dips as balls pass through.
+                if (!shootReady && getPollenShooterVelocity() >= pollenSpeed) { // && getNectarShooterVelocity() >= nectarSpeed
+                    shootReady = true;
+                }
+                if (shootReady) {
+                    gateOpen = true;
+                    intake.setState(Intake.CaseModes.SIXTY_PERCENT_SPEED);
+                    if (rumbleEnabled) gamepad1.rumble(1000);
+                }
+                break;
+            case AUTO_SHOOT:
+                pollenShooter.setVelocity(pollenSpeed);
+                nectarShooter.setVelocity(nectarSpeed);
+                //intake.setState(Intake.CaseModes.HALF_SPEED);
+                // Once both flywheels have reached speed, stay in the firing state until SHOOT is exited,
+                // even if the speed dips as balls pass through.
                 if (!shootReady && getPollenShooterVelocity() >= pollenSpeed && getNectarShooterVelocity() >= nectarSpeed) {
                     shootReady = true;
                 }
                 if (shootReady) {
                     gateOpen = true;
-                    intake.setState(Intake.CaseModes.ON);
+                    intake.setState(Intake.CaseModes.SIXTY_PERCENT_SPEED);
                     if (rumbleEnabled) gamepad1.rumble(1000);
                 }
                 break;

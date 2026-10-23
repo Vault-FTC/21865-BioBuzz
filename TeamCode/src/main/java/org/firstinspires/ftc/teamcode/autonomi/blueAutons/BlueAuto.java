@@ -29,7 +29,7 @@ public class BlueAuto extends LinearOpMode {
     // CLASS-WIDE VARIABLES: constants, pose definitions and subsystems go here
         // Shot speeds for this auto. They match the shooter's defaults now. Change them here to override the
     // shooter's speeds for this auto only.
-    static final double POLLEN_SPEED = Shooter.POLLEN_SPEED;
+    static final double POLLEN_SPEED = 1100; //Shooter.POLLEN_SPEED;
     static final double NECTAR_SPEED = Shooter.NECTAR_SPEED;
 
     // How long a shot keeps feeding once the gates are open (ms)
