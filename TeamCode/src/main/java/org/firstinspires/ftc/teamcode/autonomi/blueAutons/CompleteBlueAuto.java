@@ -18,6 +18,7 @@ import org.firstinspires.ftc.teamcode.commandSystem.InstantCommand;
 import org.firstinspires.ftc.teamcode.commandSystem.ParallelCommandGroup;
 import org.firstinspires.ftc.teamcode.commandSystem.SequentialCommandGroup;
 import org.firstinspires.ftc.teamcode.commands.FollowPathCommand;
+import org.firstinspires.ftc.teamcode.commands.RunIntakeCommand;
 import org.firstinspires.ftc.teamcode.commands.ShootCommand;
 import org.firstinspires.ftc.teamcode.commands.WaitCommand;
 import org.firstinspires.ftc.teamcode.subsystems.FollowerSubsystem;
@@ -36,6 +37,9 @@ public class CompleteBlueAuto extends LinearOpMode {
     // How long a shot keeps feeding once the gates are open (ms)
     static final double SHOT_FEED_MS = 1500;
 
+    // How long the intake runs while driving the garden and flower paths (ms)
+    static final double INTAKE_RUN_MS = 1000;
+
     // Universal step timeout (ms): any step in timedRoute(...) that hasn't finished by then is cancelled and the
     // route moves on. 0 = off (no universal timeout).
     static final double STEP_TIMEOUT_MS = 0;
@@ -44,9 +48,9 @@ public class CompleteBlueAuto extends LinearOpMode {
     private final PoseFactory poseFactory = PoseFactory.degrees().mirrorAroundPoint(70.75, 70.75);
 
     private final Pose start = poseFactory.of(59, 8.5, 90);
-    private final Pose garden = poseFactory.of(10, 8.5, 180);
+    private final Pose garden = poseFactory.of(10, 7.5, 0);
     private final Pose shoot2 = poseFactory.of(59, 133.5, 270);
-    private final Pose shoot2Control1 = poseFactory.of(24.8997, 123.0963, 0);
+    private final Pose shoot2Control1 = poseFactory.of(22.0, 125.0, 0);
     private final Pose shoot2Control2 = poseFactory.of(66.2193, 119.343, 0);
     private final Pose flower1 = poseFactory.of(47, 127, 90);
     private final Pose flower1Control1 = poseFactory.of(56.2387, 121.2095, 0);
@@ -123,15 +127,19 @@ public class CompleteBlueAuto extends LinearOpMode {
         return sequential(
                 new InstantCommand(() -> shooter.setState(Shooter.CaseModes.SHOOT_GATE_CLOSED)),   // flywheels on for the whole auto
                 shootCommand(),   // preload shot
-                follow(follower, garden()),
+                followAndIntake(garden()),
                 follow(follower, shoot2()),
                 shootCommand(),
-                follow(follower, flower1()),
+                armDown(),
+                followAndIntake(flower1()),
                 follow(follower, shoot3()),
                 shootCommand(),
-                follow(follower, flower2()),
+                armUp(),
+                armDown(),
+                followAndIntake(flower2()),
                 follow(follower, shoot4()),
                 shootCommand(),
+                armUp(),
                 follow(follower, park())
         );
     }
@@ -145,8 +153,21 @@ public class CompleteBlueAuto extends LinearOpMode {
         return new FollowPathCommand(follower, path);
     }
 
+    // Drives the path with the intake running. Finishes when both the path and the intake are done.
+    private Command followAndIntake(Path path) {
+        return new ParallelCommandGroup(follow(follower, path), new RunIntakeCommand(intake, INTAKE_RUN_MS));
+    }
+
     public Path garden() {
-        return line(start, garden).linear(start, garden);
+        return line(start, garden).linear(start, garden, 0.6);   // heading finishes turning at 60% of the move
+    }
+
+    private Command armDown() {
+        return new InstantCommand(() -> intake.setFlowerArmUp(false));
+    }
+
+    private Command armUp() {
+        return new InstantCommand(() -> intake.setFlowerArmUp(true));
     }
 
     public Path shoot2() {

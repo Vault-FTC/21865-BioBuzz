@@ -61,6 +61,10 @@ public class Intake extends Subsystem {
         currentMode = s;
     }
 
+    public void setFlowerArmUp(boolean up) {
+        flowerArmUp = up;
+    }
+
     public void toggleFlowerArm() {
         flowerArmUp = !flowerArmUp;
     }

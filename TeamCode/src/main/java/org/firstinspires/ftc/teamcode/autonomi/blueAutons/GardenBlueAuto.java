@@ -13,8 +13,10 @@ import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import org.firstinspires.ftc.teamcode.commandSystem.Command;
 import org.firstinspires.ftc.teamcode.commandSystem.CommandScheduler;
 import org.firstinspires.ftc.teamcode.commandSystem.InstantCommand;
+import org.firstinspires.ftc.teamcode.commandSystem.ParallelCommandGroup;
 import org.firstinspires.ftc.teamcode.commandSystem.SequentialCommandGroup;
 import org.firstinspires.ftc.teamcode.commands.FollowPathCommand;
+import org.firstinspires.ftc.teamcode.commands.RunIntakeCommand;
 import org.firstinspires.ftc.teamcode.commands.ShootCommand;
 import org.firstinspires.ftc.teamcode.subsystems.FollowerSubsystem;
 import org.firstinspires.ftc.teamcode.subsystems.Intake;
@@ -32,20 +34,22 @@ public class GardenBlueAuto extends LinearOpMode {
     // How long a shot keeps feeding once the gates are open (ms)
     static final double SHOT_FEED_MS = 1500;
 
+    // How long the intake runs while driving the garden path (ms)
+    static final double INTAKE_RUN_MS = 1000;
+
     // Universal step timeout (ms): any step in timedRoute(...) that hasn't finished by then is cancelled and the
     // route moves on. 0 = off (no universal timeout).
-    static final double STEP_TIMEOUT_MS = 0;
+    static final double STEP_TIMEOUT_MS = 4000;
 
     // Blue starts in the opposite corner, so red's poses are rotated 180 degrees around the center of the field
     private final PoseFactory poseFactory = PoseFactory.degrees().mirrorAroundPoint(70.75, 70.75);
 
     private final Pose start = poseFactory.of(59, 8.5, 90);
-    private final Pose garden = poseFactory.of(10, 8.5, 180);
+    private final Pose garden = poseFactory.of(10, 7.5, 0);
     private final Pose shoot2 = poseFactory.of(59, 133.5, 270);
-    private final Pose shoot2Control1 = poseFactory.of(24.8997, 123.0963, 0);
+    private final Pose shoot2Control1 = poseFactory.of(22.0, 125.0, 0);
     private final Pose shoot2Control2 = poseFactory.of(66.2193, 119.343, 0);
     private final Pose park = poseFactory.of(14, 96, 90);
-    private final Pose parkControl1 = poseFactory.of(24.7201, 39.3366, 0);
 
     // Subsystems (declare here, create them in runOpMode)
     private FollowerSubsystem follower;
@@ -110,7 +114,7 @@ public class GardenBlueAuto extends LinearOpMode {
         return sequential(
                 new InstantCommand(() -> shooter.setState(Shooter.CaseModes.SHOOT_GATE_CLOSED)),   // flywheels on for the whole auto
                 shootCommand(),   // preload shot
-                follow(follower, garden()),
+                followAndIntake(garden()),
                 follow(follower, shoot2()),
                 shootCommand(),
                 follow(follower, park())
@@ -126,8 +130,13 @@ public class GardenBlueAuto extends LinearOpMode {
         return new FollowPathCommand(follower, path);
     }
 
+    // Drives the path with the intake running. Finishes when both the path and the intake are done.
+    private Command followAndIntake(Path path) {
+        return new ParallelCommandGroup(follow(follower, path), new RunIntakeCommand(intake, INTAKE_RUN_MS));
+    }
+
     public Path garden() {
-        return line(start, garden).linear(start, garden);
+        return line(start, garden).linear(start, garden, 0.6);
     }
 
     public Path shoot2() {
@@ -135,7 +144,7 @@ public class GardenBlueAuto extends LinearOpMode {
     }
 
     public Path park() {
-        return curve(shoot2, parkControl1, park).linear(shoot2, park);
+        return curve(shoot2, park).linear(shoot2, park);
     }
 
     // Shot at this auto's speeds (POLLEN_SPEED / NECTAR_SPEED above), waits as long as it takes to reach speed

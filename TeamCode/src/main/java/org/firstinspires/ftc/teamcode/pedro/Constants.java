@@ -80,10 +80,10 @@ public class Constants {
     // ---------------------------------------------------------------------------------------------
     public static ForesightConfig foresightConfig = new ForesightConfig(
             c -> {
-                Controller primaryTranslationalForward = Controller.proportional(0.29163386300905586);
-                Controller secondaryTranslationalForward = Controller.proportional(0.10775091978150815);
-                Controller primaryTranslationalLateral = Controller.proportional(0.4093378565909824);
-                Controller secondaryTranslationalLateral = Controller.proportional(0.1512394003013972);
+                Controller primaryTranslationalForward = Controller.proportional(0.23);
+                Controller secondaryTranslationalForward = Controller.proportional(0.086);
+                Controller primaryTranslationalLateral = Controller.proportional(0.33);
+                Controller secondaryTranslationalLateral = Controller.proportional(0.12);
 
                 c.forwardTranslational.set(Controller.piecewise(secondaryTranslationalForward).put(2.5, primaryTranslationalForward));
                 c.strafeTranslational.set(Controller.piecewise(secondaryTranslationalLateral).put(2.5, primaryTranslationalLateral));
@@ -91,7 +91,7 @@ public class Constants {
                 c.coast.set(Controller.proportionalFeedforward(0.011899554894773715));
                 c.brake.set(Controller.proportionalFeedforward(0.010114621660557658));
 
-                c.headingFeedback.set(Controller.proportional(4.608204099638541));
+                c.headingFeedback.set(Controller.proportional(3.0));
                 c.headingBrakeCoefficients.set(Vector2D.cartesian(0.06444450597460338, 0.005164668918400906));
 
                 c.linearBrakeCoefficients.set(Matrix.diag(2.458970481975108, 0.20343081813934002));
