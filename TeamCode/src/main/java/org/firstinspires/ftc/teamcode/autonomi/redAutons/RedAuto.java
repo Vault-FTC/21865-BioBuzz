@@ -19,6 +19,7 @@ import org.firstinspires.ftc.teamcode.commandSystem.SequentialCommandGroup;
 import org.firstinspires.ftc.teamcode.commands.FollowPathCommand;
 import org.firstinspires.ftc.teamcode.commands.ShootCommand;
 import org.firstinspires.ftc.teamcode.commands.WaitCommand;
+import org.firstinspires.ftc.teamcode.subsystems.PanelsSupport;
 import org.firstinspires.ftc.teamcode.subsystems.FollowerSubsystem;
 import org.firstinspires.ftc.teamcode.subsystems.Intake;
 import org.firstinspires.ftc.teamcode.subsystems.Shooter;
@@ -53,6 +54,7 @@ public class RedAuto extends LinearOpMode {
 
     @Override
     public void runOpMode() throws InterruptedException {
+        telemetry = PanelsSupport.joined(telemetry);   // also show telemetry on Panels
         // LOCAL VARIABLES (only used inside runOpMode) go here
 
         // 1. Reset the scheduler (always first)
@@ -131,6 +133,16 @@ public class RedAuto extends LinearOpMode {
         return new ShootCommand(shooter, intake, pollenSpeed, nectarSpeed, timeoutMs, SHOT_FEED_MS);
     }
 
+    // Shot that feeds for feedMs instead of SHOT_FEED_MS, for example shootFor(2500)
+    private Command shootFor(double feedMs) {
+        return shootFor(feedMs, POLLEN_SPEED, NECTAR_SPEED);
+    }
+
+    // Same, at custom speeds, for example shootFor(2500, 1100, 1300)
+    private Command shootFor(double feedMs, double pollenSpeed, double nectarSpeed) {
+        return new ShootCommand(shooter, intake, pollenSpeed, nectarSpeed, 0, feedMs);
+    }
+
     // Builds the route as a sequence. If STEP_TIMEOUT_MS is above 0, every step also gets that timeout.
     private Command timedRoute(Command... steps) {
         if (STEP_TIMEOUT_MS <= 0) {
@@ -138,7 +150,11 @@ public class RedAuto extends LinearOpMode {
         }
         Command[] timed = new Command[steps.length];
         for (int i = 0; i < steps.length; i++) {
-            timed[i] = steps[i].withTimeout(STEP_TIMEOUT_MS);
+            double extraMs = 0;   // a shot with a longer feed gets that extra time added to its cap
+            if (steps[i] instanceof ShootCommand) {
+                extraMs = Math.max(0, ((ShootCommand) steps[i]).getFeedMs() - SHOT_FEED_MS);
+            }
+            timed[i] = steps[i].withTimeout(STEP_TIMEOUT_MS + extraMs);
         }
         return new SequentialCommandGroup(timed);
     }

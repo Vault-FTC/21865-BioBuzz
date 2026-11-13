@@ -33,9 +33,9 @@ public final class FieldConstants {
 
     // Autonomous start poses. Red and blue start in opposite corners, each facing its goal.
     public static final Pose2D RED_START_POSE =
-            new Pose2D(DistanceUnit.INCH, 60, 8, AngleUnit.DEGREES, 90);
+            new Pose2D(DistanceUnit.INCH, 7, 70.75, AngleUnit.DEGREES, 0);
     public static final Pose2D BLUE_START_POSE =
-            new Pose2D(DistanceUnit.INCH, 86, 132, AngleUnit.DEGREES, 270);
+            new Pose2D(DistanceUnit.INCH, 134.5, 70.75, AngleUnit.DEGREES, 180);
 
     /** Red's autonomous start pose. Alias kept for the red autos, which reference START_POSE. */
     public static final Pose2D START_POSE = RED_START_POSE;
@@ -53,13 +53,13 @@ public final class FieldConstants {
     // Teleop auto-aim points, in field inches. "Case one" is the goal's position at the start of the
     // match; "case two" is after the goal tips (toggled with gamepad2 Square -> cellPosition).
     public static final Pose2D RED_GOAL_CASE_ONE =
-            new Pose2D(DistanceUnit.INCH, 60, 60, AngleUnit.DEGREES, 0);
+            new Pose2D(DistanceUnit.INCH, 58, 58, AngleUnit.DEGREES, 0);
     public static final Pose2D RED_GOAL_CASE_TWO =
-            new Pose2D(DistanceUnit.INCH, 60, 85, AngleUnit.DEGREES, 0);
+            new Pose2D(DistanceUnit.INCH, 58, 84, AngleUnit.DEGREES, 0);
     public static final Pose2D BLUE_GOAL_CASE_ONE =
-            new Pose2D(DistanceUnit.INCH, 84, 85, AngleUnit.DEGREES, 0);
+            new Pose2D(DistanceUnit.INCH, 84, 84, AngleUnit.DEGREES, 0);
     public static final Pose2D BLUE_GOAL_CASE_TWO =
-            new Pose2D(DistanceUnit.INCH, 84, 60, AngleUnit.DEGREES, 0);
+            new Pose2D(DistanceUnit.INCH, 85, 58, AngleUnit.DEGREES, 0);
 
     /** Wraps an angle in degrees into [-180, 180). */
     public static double normalizeDegrees(double degrees) {

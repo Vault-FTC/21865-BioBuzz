@@ -246,6 +246,8 @@ public class Drivebase extends Subsystem {
 
     public void update() {
         Pinpoint.update(); // updates the odometry internally
+        PanelsSupport.drawRobot(Pinpoint.getPosX(FieldConstants.DISTANCE_UNIT), Pinpoint.getPosY(FieldConstants.DISTANCE_UNIT),
+                Pinpoint.getHeading(AngleUnit.RADIANS));   // robot on the Panels field
     }
 
     public static double distanceToGoal(Pose2D robot, Pose2D goal) {

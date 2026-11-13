@@ -15,6 +15,10 @@ import com.qualcomm.robotcore.hardware.Servo;
  */
 @TeleOp
 public class ShooterPIDTuner extends OpMode {
+    // Driver Station and Panels (laptop) gamepads combined: read pad1 / pad2 instead of gamepad1 / gamepad2
+    private final org.firstinspires.ftc.teamcode.subsystems.LaptopInput input = new org.firstinspires.ftc.teamcode.subsystems.LaptopInput();
+    private com.qualcomm.robotcore.hardware.Gamepad pad1;
+    private com.qualcomm.robotcore.hardware.Gamepad pad2;
     /** Tuning state for one shooter motor. */
     private static class Flywheel {
         final String name;
@@ -60,6 +64,8 @@ public class ShooterPIDTuner extends OpMode {
 
     @Override
     public void init() {
+        telemetry = org.firstinspires.ftc.teamcode.subsystems.PanelsSupport.joined(telemetry);   // also show telemetry on Panels
+        input.update(gamepad1, gamepad2); pad1 = input.pad1; pad2 = input.pad2;
         pollen = new Flywheel("Pollen", hardwareMap.get(DcMotorEx.class, "pollenShooter"), DcMotorEx.Direction.REVERSE);
         nectar = new Flywheel("Nectar", hardwareMap.get(DcMotorEx.class, "nectarShooter"), DcMotorEx.Direction.FORWARD);
         intake = hardwareMap.get(DcMotorEx.class, "intake");
@@ -78,50 +84,51 @@ public class ShooterPIDTuner extends OpMode {
 
     @Override
     public void loop() {
+        input.update(gamepad1, gamepad2); pad1 = input.pad1; pad2 = input.pad2;
         // Options: choose which shooter the adjustments below apply to
-        if (gamepad1.optionsWasPressed()) {
+        if (pad1.optionsWasPressed()) {
             selected = (selected == pollen) ? nectar : pollen;
         }
 
         // Cycle which velocity step size is active
-        if (gamepad1.triangleWasPressed()) {
+        if (pad1.triangleWasPressed()) {
             velocityStepIndex = (velocityStepIndex + 1) % velocityStepSizes.length;
         }
         // Adjust the selected shooter's target velocity by the active step size
-        if (gamepad1.crossWasPressed()) {
+        if (pad1.crossWasPressed()) {
             selected.targetVelocity += velocityStepSizes[velocityStepIndex];
         }
-        if (gamepad1.squareWasPressed()) {
+        if (pad1.squareWasPressed()) {
             selected.targetVelocity -= velocityStepSizes[velocityStepIndex];
         }
 
         // Cycle which P/F step size is active
-        if (gamepad1.circleWasPressed()) {
+        if (pad1.circleWasPressed()) {
             pidStepIndex = (pidStepIndex + 1) % pidStepSizes.length;
         }
-        if (gamepad1.dpadRightWasPressed()) {
+        if (pad1.dpadRightWasPressed()) {
             selected.F += pidStepSizes[pidStepIndex];
         }
-        if (gamepad1.dpadLeftWasPressed()) {
+        if (pad1.dpadLeftWasPressed()) {
             selected.F -= pidStepSizes[pidStepIndex];
         }
-        if (gamepad1.dpadDownWasPressed()) {
+        if (pad1.dpadDownWasPressed()) {
             selected.P -= pidStepSizes[pidStepIndex];
         }
-        if (gamepad1.dpadUpWasPressed()) {
+        if (pad1.dpadUpWasPressed()) {
             selected.P += pidStepSizes[pidStepIndex];
         }
 
         // Share: toggle the gates open/closed (they stay where you leave them)
-        if (gamepad1.shareWasPressed()) {
+        if (pad1.shareWasPressed()) {
             setGates(!gatesOpen);
         }
 
         // Left bumper: intake in (feed a game piece so you're tuning under realistic load).
         // Left trigger: outtake.
-        if (gamepad1.left_bumper) {
+        if (pad1.left_bumper) {
             intake.setPower(0.5);
-        } else if (gamepad1.left_trigger_pressed) {
+        } else if (pad1.left_trigger_pressed) {
             intake.setPower(-1);
         } else {
             intake.setPower(0);

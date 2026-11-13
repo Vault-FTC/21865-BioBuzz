@@ -11,6 +11,7 @@ import org.firstinspires.ftc.teamcode.commandSystem.Command;
 import org.firstinspires.ftc.teamcode.commandSystem.CommandScheduler;
 import org.firstinspires.ftc.teamcode.commandSystem.SequentialCommandGroup;
 import org.firstinspires.ftc.teamcode.commands.FollowPathCommand;
+import org.firstinspires.ftc.teamcode.subsystems.PanelsSupport;
 import org.firstinspires.ftc.teamcode.subsystems.FollowerSubsystem;
 
 /**
@@ -44,6 +45,7 @@ public class PedroTestAutoRed extends LinearOpMode {
 
     @Override
     public void runOpMode() throws InterruptedException {
+        telemetry = PanelsSupport.joined(telemetry);   // also show telemetry on Panels
         CommandScheduler scheduler = CommandScheduler.getInstance();
         scheduler.clearRegistry();
 

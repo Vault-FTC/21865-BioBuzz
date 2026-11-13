@@ -20,7 +20,7 @@ public class Shooter extends Subsystem {
     private final Servo nectarGate;
     private final Intake intake;
     // Default flywheel target speeds for teleop and autonomous. Change them here to change them everywhere.
-    public static final double POLLEN_SPEED = 1310;
+    public static final double POLLEN_SPEED = 1150;
     public static final double NECTAR_SPEED = 1300;
 
     double pollenSpeed = POLLEN_SPEED;
@@ -29,7 +29,7 @@ public class Shooter extends Subsystem {
     boolean manualGateOpen = false;
     boolean rumbleEnabled = true;   // teleop rumbles when the shooter is up to speed; autos turn this off
     boolean shootReady = false;   // latched once the flywheels reach speed in SHOOT; cleared when leaving SHOOT
-    PIDFCoefficients pollenPIDF = new PIDFCoefficients(200, 0, 0, 13.453); // p=265
+    PIDFCoefficients pollenPIDF = new PIDFCoefficients(167.8, 0, 0, 12.824); // (200, 0, 0, 13.453)
     PIDFCoefficients nectarPIDF = new PIDFCoefficients(150, 0, 0, 11.2);
     Gamepad gamepad1; //what is this?
 
@@ -73,7 +73,7 @@ public class Shooter extends Subsystem {
                 }
                 if (shootReady) {
                     gateOpen = true;
-                    intake.setState(Intake.CaseModes.SIXTY_PERCENT_SPEED);
+                    intake.setState(Intake.CaseModes.ON);
                     if (rumbleEnabled) gamepad1.rumble(1000);
                 }
                 break;

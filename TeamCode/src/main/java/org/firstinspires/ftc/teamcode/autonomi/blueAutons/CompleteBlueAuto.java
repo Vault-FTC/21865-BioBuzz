@@ -17,10 +17,12 @@ import org.firstinspires.ftc.teamcode.commandSystem.DelayCommand;
 import org.firstinspires.ftc.teamcode.commandSystem.InstantCommand;
 import org.firstinspires.ftc.teamcode.commandSystem.ParallelCommandGroup;
 import org.firstinspires.ftc.teamcode.commandSystem.SequentialCommandGroup;
+import org.firstinspires.ftc.teamcode.commands.FlowerArmCommand;
 import org.firstinspires.ftc.teamcode.commands.FollowPathCommand;
 import org.firstinspires.ftc.teamcode.commands.RunIntakeCommand;
 import org.firstinspires.ftc.teamcode.commands.ShootCommand;
 import org.firstinspires.ftc.teamcode.commands.WaitCommand;
+import org.firstinspires.ftc.teamcode.subsystems.PanelsSupport;
 import org.firstinspires.ftc.teamcode.subsystems.FollowerSubsystem;
 import org.firstinspires.ftc.teamcode.subsystems.Intake;
 import org.firstinspires.ftc.teamcode.subsystems.Shooter;
@@ -35,34 +37,43 @@ public class CompleteBlueAuto extends LinearOpMode {
     static final double NECTAR_SPEED = Shooter.NECTAR_SPEED;
 
     // How long a shot keeps feeding once the gates are open (ms)
-    static final double SHOT_FEED_MS = 1500;
+    static final double SHOT_FEED_MS = 1300;
 
-    // How long the intake runs while driving the garden and flower paths (ms)
-    static final double INTAKE_RUN_MS = 1000;
+    // Intake time (ms) for the flower moves, for example move(flower1(), INTAKE_RUN_MS)
+    static final double INTAKE_RUN_MS = 4000;
+
+    // How long armDown() waits for the flower arm to finish lowering before the next step starts (ms)
+    static final double ARM_DOWN_MS = 650;
+
+    // Same for armUp(): how long it waits for the arm to finish raising (ms)
+    static final double ARM_UP_MS = 800;
 
     // Universal step timeout (ms): any step in timedRoute(...) that hasn't finished by then is cancelled and the
     // route moves on. 0 = off (no universal timeout).
     static final double STEP_TIMEOUT_MS = 0;
 
-    // Blue starts in the opposite corner, so red's poses are rotated 180 degrees around the center of the field
-    private final PoseFactory poseFactory = PoseFactory.degrees().mirrorAroundPoint(70.75, 70.75);
+    // Blue poses in field coordinates, edited directly (no mirror)
+    private final PoseFactory poseFactory = PoseFactory.degrees();
 
-    private final Pose start = poseFactory.of(59, 8.5, 90);
-    private final Pose garden = poseFactory.of(10, 7.5, 0);
-    private final Pose shoot2 = poseFactory.of(59, 133.5, 270);
-    private final Pose shoot2Control1 = poseFactory.of(22.0, 125.0, 0);
-    private final Pose shoot2Control2 = poseFactory.of(66.2193, 119.343, 0);
-    private final Pose flower1 = poseFactory.of(47, 127, 90);
-    private final Pose flower1Control1 = poseFactory.of(56.2387, 121.2095, 0);
-    private final Pose shoot3 = poseFactory.of(59, 133.5, 270);
-    private final Pose shoot3Control1 = poseFactory.of(60.0744, 118.8244, 0);
-    private final Pose flower2 = poseFactory.of(12.771, 47.8317, 180);
-    private final Pose flower2Control1 = poseFactory.of(71.9061, 132.9709, 0);
-    private final Pose flower2Control2 = poseFactory.of(1.0251, 93.1901, 0);
-    private final Pose flower2Control3 = poseFactory.of(39.1327, 43.127, 0);
-    private final Pose shoot4 = poseFactory.of(59, 8.5, 90);
-    private final Pose park = poseFactory.of(14, 96, 90);
-    private final Pose parkControl1 = poseFactory.of(24.7201, 39.3366, 0);
+    private final Pose start = poseFactory.of(82.5, 133, 270);
+    private final Pose shoot1 = poseFactory.of(82.5, 122.5, 270);
+    private final Pose garden = poseFactory.of(134, 136, 180);
+    private final Pose gardenControl1 = poseFactory.of(110, 136, 0);
+    private final Pose pt1Shoot2 = poseFactory.of(113, 41, 90);
+    private final Pose pt1Shoot2Control1 = poseFactory.of(115, 114.0043, 0);
+    private final Pose pt2Shoot2 = poseFactory.of(82.5, 16, 90);
+    private final Pose pt2Shoot2Control1 = poseFactory.of(80, 30, 0);
+    private final Pose flower1 = poseFactory.of(91, 14, 90);
+    private final Pose flower1Control1 = poseFactory.of(85., 20., 180);
+    private final Pose shoot3 = poseFactory.of(82.5, 16, 90);
+    private final Pose shoot3Control1 = poseFactory.of(81.4256, 22.6756, 180);
+    private final Pose flower2 = poseFactory.of(127.5, 96, 180);
+    private final Pose flower2Control1 = poseFactory.of(69.5939, 8.5291, 180);
+    private final Pose flower2Control2 = poseFactory.of(140.4749, 48.3099, 180);
+    private final Pose flower2Control3 = poseFactory.of(102.3673, 98.373, 180);
+    private final Pose shoot4 = poseFactory.of(82.5, 122, 270);
+    private final Pose park = poseFactory.of(127.5, 45.5, 180);
+    private final Pose parkControl1 = poseFactory.of(117, 102, 180);
 
     // Subsystems (declare here, create them in runOpMode)
     private FollowerSubsystem follower;
@@ -71,6 +82,7 @@ public class CompleteBlueAuto extends LinearOpMode {
 
     @Override
     public void runOpMode() throws InterruptedException {
+        telemetry = PanelsSupport.joined(telemetry);   // also show telemetry on Panels
         // LOCAL VARIABLES (only used inside runOpMode) go here
 
         // 1. Reset the scheduler (always first)
@@ -126,21 +138,20 @@ public class CompleteBlueAuto extends LinearOpMode {
     public Command autoRoutine() {
         return sequential(
                 new InstantCommand(() -> shooter.setState(Shooter.CaseModes.SHOOT_GATE_CLOSED)),   // flywheels on for the whole auto
+                move(shoot1(), 350),
                 shootCommand(),   // preload shot
-                followAndIntake(garden()),
-                follow(follower, shoot2()),
+                move(garden(), 2000),
+                move(pt1Shoot2(), 1750),
+                move(pt2Shoot2(), 1250),
                 shootCommand(),
                 armDown(),
-                followAndIntake(flower1()),
-                follow(follower, shoot3()),
+                move(flower1(), 2000),
+                move(shoot3(), 500),
                 shootCommand(),
-                armUp(),
-                armDown(),
-                followAndIntake(flower2()),
-                follow(follower, shoot4()),
+                move(flower2(), 6500),   // arm stays down from flower 1
+                move(shoot4(), 2000),
                 shootCommand(),
-                armUp(),
-                follow(follower, park())
+                move(park(), ArmMove.UP)   // arm comes up while driving
         );
     }
 
@@ -153,29 +164,76 @@ public class CompleteBlueAuto extends LinearOpMode {
         return new FollowPathCommand(follower, path);
     }
 
-    // Drives the path with the intake running. Finishes when both the path and the intake are done.
-    private Command followAndIntake(Path path) {
-        return new ParallelCommandGroup(follow(follower, path), new RunIntakeCommand(intake, INTAKE_RUN_MS));
+    // What the flower arm does during a move()
+    private enum ArmMove { NONE, UP, DOWN }
+
+    // A path move that can also run the intake and/or move the flower arm while it drives, so they cost no extra
+    // time. Everything after the path is optional. The move finishes when the path, the intake and the arm are done.
+    //   move(park())                           plain move
+    //   move(garden(), 1250)                   intake runs for 1250 ms
+    //   move(park(), ArmMove.UP)               arm goes up (waits ARM_UP_MS)
+    //   move(park(), ArmMove.UP, 400)          arm goes up (waits 400 ms)
+    //   move(flower1(), 4000, ArmMove.DOWN)    intake and arm (add a 4th number for the arm's wait time)
+    private Command move(Path path) {
+        return move(path, 0, ArmMove.NONE, 0);
+    }
+
+    private Command move(Path path, double intakeMs) {
+        return move(path, intakeMs, ArmMove.NONE, 0);
+    }
+
+    private Command move(Path path, ArmMove arm) {
+        return move(path, 0, arm, 0);
+    }
+
+    private Command move(Path path, ArmMove arm, double armMs) {
+        return move(path, 0, arm, armMs);
+    }
+
+    private Command move(Path path, double intakeMs, ArmMove arm) {
+        return move(path, intakeMs, arm, 0);
+    }
+
+    private Command move(Path path, double intakeMs, ArmMove arm, double armMs) {
+        java.util.ArrayList<Command> parts = new java.util.ArrayList<>();
+        parts.add(follow(follower, path));
+        if (intakeMs > 0) parts.add(new RunIntakeCommand(intake, intakeMs));
+        if (arm == ArmMove.UP) parts.add(new FlowerArmCommand(intake, true, armMs > 0 ? armMs : ARM_UP_MS));
+        if (arm == ArmMove.DOWN) parts.add(new FlowerArmCommand(intake, false, armMs > 0 ? armMs : ARM_DOWN_MS));
+        return new ParallelCommandGroup(parts.toArray(new Command[0]));
+    }
+
+    // Each path starts from the END pose of the path before it in autoRoutine(), so the heading and position carry
+    // over. If you reorder or remove steps (for example drop pt2Shoot2 and go straight from pt1Shoot2 to park),
+    // change that path's start pose to the end pose of whatever path now comes before it.
+    public Path shoot1() {
+        return line(start, shoot1).linear(start, shoot1);
     }
 
     public Path garden() {
-        return line(start, garden).linear(start, garden, 0.6);   // heading finishes turning at 60% of the move
+        return curve(shoot1, gardenControl1, garden).linear(shoot1, garden);
     }
 
+    // Lowers the flower arm and waits ARM_DOWN_MS, so the next move starts with the arm already down
     private Command armDown() {
-        return new InstantCommand(() -> intake.setFlowerArmUp(false));
+        return new FlowerArmCommand(intake, false, ARM_DOWN_MS);
     }
 
+    // Raises the flower arm and waits ARM_UP_MS, so a following armDown() can't cancel the move before the servo gets going
     private Command armUp() {
-        return new InstantCommand(() -> intake.setFlowerArmUp(true));
+        return new FlowerArmCommand(intake, true, ARM_UP_MS);
     }
 
-    public Path shoot2() {
-        return curve(garden, shoot2Control1, shoot2Control2, shoot2).linear(garden, shoot2);
+    public Path pt1Shoot2() {
+        return curve(garden, pt1Shoot2Control1, pt1Shoot2).linear(garden, pt1Shoot2);
+    }
+
+    public Path pt2Shoot2() {
+        return curve(pt1Shoot2, pt2Shoot2Control1, pt2Shoot2).linear(pt1Shoot2, pt2Shoot2);
     }
 
     public Path flower1() {
-        return curve(shoot2, flower1Control1, flower1).linear(shoot2, flower1);
+        return curve(pt2Shoot2, flower1Control1, flower1).linear(pt2Shoot2, flower1);
     }
 
     public Path shoot3() {
@@ -194,26 +252,24 @@ public class CompleteBlueAuto extends LinearOpMode {
         return curve(shoot4, parkControl1, park).linear(shoot4, park);
     }
 
-    // Shot at this auto's speeds (POLLEN_SPEED / NECTAR_SPEED above), waits as long as it takes to reach speed
+    // Shot at this auto's speeds. Both numbers are optional, and 0 means "use the default":
+    //   timeoutMs: if the flywheels aren't at speed after this long, it feeds anyway. 0 = wait as long as it takes.
+    //   feedMs: how long it feeds once the gates are open. 0 = SHOT_FEED_MS.
+    //   shootCommand()          no timeout, default feed time
+    //   shootCommand(3000, 0)   timeout only
+    //   shootCommand(0, 2000)   feed time only
+    //   shootCommand(3000, 2000)  both
     private Command shootCommand() {
-        return shootCommand(POLLEN_SPEED, NECTAR_SPEED, 0);
+        return shootCommand(0, 0);
     }
 
-    // Shot at this auto's speeds. If the flywheels aren't at speed after timeoutMs, it feeds anyway.
-    // For example shootCommand(4000)
-    private Command shootCommand(double timeoutMs) {
-        return shootCommand(POLLEN_SPEED, NECTAR_SPEED, timeoutMs);
+    private Command shootCommand(double timeoutMs, double feedMs) {
+        return shootCommand(POLLEN_SPEED, NECTAR_SPEED, timeoutMs, feedMs);
     }
 
-    // Shot at custom speeds (pollen, nectar) for this one shot only, for example shootCommand(1100, 1300)
-    private Command shootCommand(double pollenSpeed, double nectarSpeed) {
-        return shootCommand(pollenSpeed, nectarSpeed, 0);
-    }
-
-    // Shot at custom speeds that feeds anyway after timeoutMs if the flywheels aren't at speed, for example
-    // shootCommand(1100, 1300, 4000). A timeout of 0 or less means no timeout.
-    private Command shootCommand(double pollenSpeed, double nectarSpeed, double timeoutMs) {
-        return new ShootCommand(shooter, intake, pollenSpeed, nectarSpeed, timeoutMs, SHOT_FEED_MS);
+    // Same at custom speeds (pollen, nectar) for this one shot only, for example shootCommand(1100, 1300, 0, 0)
+    private Command shootCommand(double pollenSpeed, double nectarSpeed, double timeoutMs, double feedMs) {
+        return new ShootCommand(shooter, intake, pollenSpeed, nectarSpeed, timeoutMs, feedMs > 0 ? feedMs : SHOT_FEED_MS);
     }
 
     // Builds the route as a sequence. If STEP_TIMEOUT_MS is above 0, every step also gets that timeout.
@@ -223,7 +279,11 @@ public class CompleteBlueAuto extends LinearOpMode {
         }
         Command[] timed = new Command[steps.length];
         for (int i = 0; i < steps.length; i++) {
-            timed[i] = steps[i].withTimeout(STEP_TIMEOUT_MS);
+            double extraMs = 0;   // a shot with a longer feed gets that extra time added to its cap
+            if (steps[i] instanceof ShootCommand) {
+                extraMs = Math.max(0, ((ShootCommand) steps[i]).getFeedMs() - SHOT_FEED_MS);
+            }
+            timed[i] = steps[i].withTimeout(STEP_TIMEOUT_MS + extraMs);
         }
         return new SequentialCommandGroup(timed);
     }

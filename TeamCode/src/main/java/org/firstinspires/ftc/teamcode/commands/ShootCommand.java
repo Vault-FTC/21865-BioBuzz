@@ -39,12 +39,16 @@ public class ShootCommand extends Command {
         this.feedMs = feedMs;
     }
 
+    public double getFeedMs() {
+        return feedMs;
+    }
+
     @Override
     public void initialize() {
         previousPollenSpeed = shooter.getTargetPollenSpeed();
         previousNectarSpeed = shooter.getTargetNectarSpeed();
         shooter.setTargetSpeeds(pollenSpeed, nectarSpeed);
-        shooter.setState(Shooter.CaseModes.AUTO_SHOOT);
+        shooter.setState(Shooter.CaseModes.SHOOT);
         feeding = false;
         phaseTimer.reset();
     }

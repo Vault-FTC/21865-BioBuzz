@@ -56,6 +56,7 @@ public class FollowerSubsystem extends Subsystem {
     @Override
     public void periodic() {
         follower.update();
+        PanelsSupport.drawRobot(follower.pose().x(), follower.pose().y(), follower.pose().heading());   // robot on the Panels field
 
         // Keep the auto -> teleop handoff live while autonomous runs.
         Pose pose = follower.pose();

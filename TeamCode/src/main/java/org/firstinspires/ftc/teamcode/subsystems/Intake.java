@@ -12,8 +12,8 @@ public class Intake extends Subsystem {
     {
         OFF, REVERSE, ON, HALF_SPEED, SIXTY_PERCENT_SPEED
     }
-    public static final double FLOWER_ARM_UP = 0;
-    public static final double FLOWER_ARM_DOWN = 0.51;
+    public static final double FLOWER_ARM_UP = 0.22;
+    public static final double FLOWER_ARM_DOWN = 0.76;
 
     private DcMotorEx intake;
     private Servo flowerArm; // uncomment out flower intake lines when we actually get flower intake into the code

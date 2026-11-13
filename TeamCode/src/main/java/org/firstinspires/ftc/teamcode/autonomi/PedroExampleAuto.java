@@ -9,6 +9,7 @@ import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import org.firstinspires.ftc.teamcode.commandSystem.CommandScheduler;
 import org.firstinspires.ftc.teamcode.commandSystem.SequentialCommandGroup;
 import org.firstinspires.ftc.teamcode.commands.FollowPathCommand;
+import org.firstinspires.ftc.teamcode.subsystems.PanelsSupport;
 import org.firstinspires.ftc.teamcode.subsystems.FollowerSubsystem;
 
 /**
@@ -28,6 +29,7 @@ import org.firstinspires.ftc.teamcode.subsystems.FollowerSubsystem;
 public class PedroExampleAuto extends LinearOpMode {
     @Override
     public void runOpMode() {
+        telemetry = PanelsSupport.joined(telemetry);   // also show telemetry on Panels
         CommandScheduler.getInstance().clearRegistry();
 
         FollowerSubsystem follower = new FollowerSubsystem(hardwareMap);

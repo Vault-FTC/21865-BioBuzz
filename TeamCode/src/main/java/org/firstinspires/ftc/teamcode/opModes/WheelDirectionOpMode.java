@@ -9,9 +9,15 @@ import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 
 @TeleOp
 public class WheelDirectionOpMode extends LinearOpMode {
+    // Driver Station and Panels (laptop) gamepads combined: read pad1 / pad2 instead of gamepad1 / gamepad2
+    private final org.firstinspires.ftc.teamcode.subsystems.LaptopInput input = new org.firstinspires.ftc.teamcode.subsystems.LaptopInput();
+    private com.qualcomm.robotcore.hardware.Gamepad pad1;
+    private com.qualcomm.robotcore.hardware.Gamepad pad2;
 
     @Override
     public void runOpMode() throws InterruptedException {
+        telemetry = org.firstinspires.ftc.teamcode.subsystems.PanelsSupport.joined(telemetry);   // also show telemetry on Panels
+        input.update(gamepad1, gamepad2); pad1 = input.pad1; pad2 = input.pad2;
 
         DcMotorEx frontLeftMotor = hardwareMap.get(DcMotorEx.class, "frontLeftMotor");
         DcMotorEx frontRightMotor = hardwareMap.get(DcMotorEx.class, "frontRightMotor");
@@ -28,11 +34,12 @@ public class WheelDirectionOpMode extends LinearOpMode {
         waitForStart();
 
         while (opModeIsActive()) {
+            input.update(gamepad1, gamepad2); pad1 = input.pad1; pad2 = input.pad2;
             pinpoint.update();
-            doMotor(gamepad1.a, frontLeftMotor, "frontLeftMotor");
-            doMotor(gamepad1.x, frontRightMotor, "frontRightMotor");
-            doMotor(gamepad1.b, backLeftMotor, "backLeftMotor");
-            doMotor(gamepad1.y, backRightMotor, "backRightMotor");
+            doMotor(pad1.a, frontLeftMotor, "frontLeftMotor");
+            doMotor(pad1.x, frontRightMotor, "frontRightMotor");
+            doMotor(pad1.b, backLeftMotor, "backLeftMotor");
+            doMotor(pad1.y, backRightMotor, "backRightMotor");
 
             telemetry.addData("Pos X (mm)", pinpoint.getPosX(DistanceUnit.MM));
             telemetry.addData("Pos Y (mm)", pinpoint.getPosY(DistanceUnit.MM));
