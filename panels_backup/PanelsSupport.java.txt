@@ -1,0 +1,59 @@
+package org.firstinspires.ftc.teamcode.subsystems;
+
+import com.bylazar.field.FieldManager;
+import com.bylazar.field.PanelsField;
+import com.bylazar.telemetry.JoinedTelemetry;
+import com.bylazar.telemetry.PanelsTelemetry;
+
+import org.firstinspires.ftc.robotcore.external.Telemetry;
+
+/**
+ * Helpers for the Panels web dashboard (http://192.168.43.1:8001). Everything here is safe to call when Panels isn't
+ * running: if it fails, the Driver Station behaves exactly as it did before.
+ */
+public final class PanelsSupport {
+    private static final double ROBOT_RADIUS_IN = 9;
+    private static final long DRAW_INTERVAL_MS = 50;
+
+    private static boolean fieldReady = false;
+    private static long lastDrawMs = 0;
+
+    private PanelsSupport() {}
+
+    /**
+     * Returns a telemetry that sends everything to both the Driver Station and Panels. Use it once at the start of an
+     * op mode: telemetry = PanelsSupport.joined(telemetry);
+     */
+    public static Telemetry joined(Telemetry driverStation) {
+        try {
+            return new JoinedTelemetry(PanelsTelemetry.INSTANCE.getFtcTelemetry(), driverStation);
+        } catch (Throwable t) {
+            return driverStation;
+        }
+    }
+
+    /**
+     * Draws the robot on the Panels field: a circle with a line toward the front (the shooter end). x and y are field
+     * inches in the same frame as the Pedro paths (origin bottom-left), the heading is in radians.
+     */
+    public static void drawRobot(double x, double y, double headingRad) {
+        long now = System.currentTimeMillis();
+        if (now - lastDrawMs < DRAW_INTERVAL_MS) return;
+        lastDrawMs = now;
+        try {
+            FieldManager field = PanelsField.INSTANCE.getField();
+            if (!fieldReady) {
+                field.setOffsets(PanelsField.INSTANCE.getPresets().getPEDRO_PATHING());
+                fieldReady = true;
+            }
+            field.setStyle("#00C853", "#FFFFFF", 1);
+            field.moveCursor(x, y);
+            field.circle(ROBOT_RADIUS_IN);
+            field.setOutline("#FFFFFF", 2);
+            field.moveCursor(x, y);
+            field.line(x + ROBOT_RADIUS_IN * Math.cos(headingRad), y + ROBOT_RADIUS_IN * Math.sin(headingRad));
+            field.update();
+        } catch (Throwable ignored) {
+        }
+    }
+}

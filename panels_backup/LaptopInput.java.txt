@@ -1,0 +1,62 @@
+package org.firstinspires.ftc.teamcode.subsystems;
+
+import com.bylazar.gamepad.GamepadManager;
+import com.bylazar.gamepad.PanelsGamepad;
+import com.qualcomm.robotcore.hardware.Gamepad;
+
+/**
+ * Lets the Driver Station gamepads and a gamepad in the Panels web page (laptop, port 8001) drive at the same time.
+ * Call update(gamepad1, gamepad2) once at the top of every loop, then read pad1 / pad2 instead of gamepad1 / gamepad2
+ * (including the ...WasPressed() methods). Each button is pressed if either source presses it, and each stick uses
+ * the Panels stick when it is moved and the Driver Station stick otherwise.
+ * If Panels fails for any reason, pad1 / pad2 are plain copies of the Driver Station gamepads, so driving from the
+ * Driver Station keeps working.
+ */
+public class LaptopInput {
+    public final Gamepad pad1 = new Gamepad();
+    public final Gamepad pad2 = new Gamepad();
+
+    public void update(Gamepad driverStation1, Gamepad driverStation2) {
+        pad1.copy(merged(true, driverStation1));
+        pad2.copy(merged(false, driverStation2));
+    }
+
+    private Gamepad merged(boolean first, Gamepad driverStation) {
+        try {
+            return (first ? PanelsGamepad.INSTANCE.getFirstManager() : PanelsGamepad.INSTANCE.getSecondManager())
+                    .asCombinedFTCGamepad(driverStation);
+        } catch (Throwable t) {
+            return driverStation;
+        }
+    }
+
+    /** One line showing what Panels is receiving from the laptop for each slot, for checking the setup on telemetry. */
+    public String status() {
+        try {
+            return "slot1 " + describe(PanelsGamepad.INSTANCE.getFirstManager())
+                    + " | slot2 " + describe(PanelsGamepad.INSTANCE.getSecondManager());
+        } catch (Throwable t) {
+            return "Panels gamepad unavailable";
+        }
+    }
+
+    private static String describe(GamepadManager m) {
+        StringBuilder b = new StringBuilder(String.format("LS(%.2f,%.2f) RS(%.2f,%.2f)", m.getLeftStickX(), m.getLeftStickY(),
+                m.getRightStickX(), m.getRightStickY()));
+        if (m.getCross()) b.append(" X");
+        if (m.getCircle()) b.append(" O");
+        if (m.getSquare()) b.append(" Sq");
+        if (m.getTriangle()) b.append(" Tri");
+        if (m.getL1()) b.append(" L1");
+        if (m.getR1()) b.append(" R1");
+        if (m.getL2() > 0.1) b.append(" L2");
+        if (m.getR2() > 0.1) b.append(" R2");
+        if (m.getDpadUp()) b.append(" Up");
+        if (m.getDpadDown()) b.append(" Down");
+        if (m.getDpadLeft()) b.append(" Left");
+        if (m.getDpadRight()) b.append(" Right");
+        if (m.getOptions()) b.append(" Opt");
+        if (m.getShare()) b.append(" Share");
+        return b.toString();
+    }
+}
