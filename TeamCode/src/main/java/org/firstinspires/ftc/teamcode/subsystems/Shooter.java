@@ -15,37 +15,30 @@ public class Shooter extends Subsystem {
     }
 
     private final DcMotorEx pollenShooter;
-    private final DcMotorEx nectarShooter;
     private final Servo pollenGate;
-    private final Servo nectarGate;
     private final Intake intake;
     // Default flywheel target speeds for teleop and autonomous. Change them here to change them everywhere.
     public static final double POLLEN_SPEED = 1150;
-    public static final double NECTAR_SPEED = 1300;
+    // Gate servo positions. ShooterPIDTuner uses these too, so change them here only.
+    public static final double POLLEN_GATE_CLOSED = 0.499;
+    public static final double POLLEN_GATE_OPEN = 0.5;
 
     double pollenSpeed = POLLEN_SPEED;
-    double nectarSpeed = NECTAR_SPEED;
     CaseModes currentMode = CaseModes.OFF;
     boolean manualGateOpen = false;
     boolean rumbleEnabled = true;   // teleop rumbles when the shooter is up to speed; autos turn this off
     boolean shootReady = false;   // latched once the flywheels reach speed in SHOOT; cleared when leaving SHOOT
-    PIDFCoefficients pollenPIDF = new PIDFCoefficients(167.8, 0, 0, 12.824); // (200, 0, 0, 13.453)
-    PIDFCoefficients nectarPIDF = new PIDFCoefficients(150, 0, 0, 11.2);
+    PIDFCoefficients pollenPIDF = new PIDFCoefficients(167.8, 0, 0, 12.421); // F from the 2026-11-16 tuner runs at 1350 (they gave 12.174 and 12.421; before that 12.824)
     Gamepad gamepad1; //what is this?
 
     public Shooter(HardwareMap hardwareMap, Intake intake, Gamepad gamepad) {
         pollenShooter = hardwareMap.get(DcMotorEx.class, "pollenShooter");
-        nectarShooter = hardwareMap.get(DcMotorEx.class, "nectarShooter");
         pollenGate = hardwareMap.get(Servo.class, "pollenGate");
-        nectarGate = hardwareMap.get(Servo.class, "nectarGate");
         this.intake = intake;
         pollenShooter.setDirection(DcMotorEx.Direction.REVERSE);
         pollenShooter.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         pollenShooter.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         pollenShooter.setPIDFCoefficients(DcMotor.RunMode.RUN_USING_ENCODER, pollenPIDF);
-        nectarShooter.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        nectarShooter.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-        nectarShooter.setPIDFCoefficients(DcMotor.RunMode.RUN_USING_ENCODER, nectarPIDF);
         gamepad1 = gamepad; //what is this?
     }
 
@@ -60,15 +53,13 @@ public class Shooter extends Subsystem {
         switch(currentMode){
             case OFF:
                 pollenShooter.setVelocity(0);
-                nectarShooter.setVelocity(0);
                 break;
             case SHOOT:
                 pollenShooter.setVelocity(pollenSpeed);
-                nectarShooter.setVelocity(nectarSpeed);
                 //intake.setState(Intake.CaseModes.HALF_SPEED);
                 // Once both flywheels have reached speed, stay in the firing state until SHOOT is exited,
                 // even if the speed dips as balls pass through.
-                if (!shootReady && getPollenShooterVelocity() >= pollenSpeed) { // && getNectarShooterVelocity() >= nectarSpeed
+                if (!shootReady && getPollenShooterVelocity() >= pollenSpeed) {
                     shootReady = true;
                 }
                 if (shootReady) {
@@ -79,11 +70,10 @@ public class Shooter extends Subsystem {
                 break;
             case AUTO_SHOOT:
                 pollenShooter.setVelocity(pollenSpeed);
-                nectarShooter.setVelocity(nectarSpeed);
                 //intake.setState(Intake.CaseModes.HALF_SPEED);
                 // Once both flywheels have reached speed, stay in the firing state until SHOOT is exited,
                 // even if the speed dips as balls pass through.
-                if (!shootReady && getPollenShooterVelocity() >= pollenSpeed && getNectarShooterVelocity() >= nectarSpeed) {
+                if (!shootReady && getPollenShooterVelocity() >= pollenSpeed) {
                     shootReady = true;
                 }
                 if (shootReady) {
@@ -94,14 +84,12 @@ public class Shooter extends Subsystem {
                 break;
             case SHOOT_GATE_CLOSED:
                 pollenShooter.setVelocity(pollenSpeed);
-                nectarShooter.setVelocity(nectarSpeed);
                 // doesn't touch the intake, so the driver keeps manual intake control
                 break;
             case REVERSE:
                 gateOpen = true;
                 intake.setState(Intake.CaseModes.REVERSE);
                 pollenShooter.setVelocity(-900);
-                nectarShooter.setVelocity(-900);
                 break;
         }
         // The gates are written once per loop: open if the mode wants them open OR the driver is holding the manual override.
@@ -141,19 +129,12 @@ public class Shooter extends Subsystem {
         return pollenSpeed;
     }
 
-    public double getTargetNectarSpeed() {
-        return nectarSpeed;
-    }
-
-    public void setTargetSpeeds(double pollenSpeed, double nectarSpeed){
+    public void setTargetSpeed(double pollenSpeed){
         this.pollenSpeed = pollenSpeed;
-        this.nectarSpeed = nectarSpeed;
     }
-    public void setShooterSpeed(double pollenSpeed, double nectarSpeed){
+    public void setShooterSpeed(double pollenSpeed){
         this.pollenSpeed = pollenSpeed;
-        this.nectarSpeed = nectarSpeed;
         pollenShooter.setVelocity(pollenSpeed);
-        nectarShooter.setVelocity(nectarSpeed);
     }
 //    public String telemetryUpdate() {
 //        return "Servo Position: " + hood.getPosition() + " \n ShooterMode: " + currentMode
@@ -163,21 +144,15 @@ public class Shooter extends Subsystem {
     {
         return pollenShooter.getVelocity();
     }
-    public double getNectarShooterVelocity()
-    {
-        return nectarShooter.getVelocity();
-    }
 
     double degreesToPosition(double degrees) {
         return 0.15 + (degrees - 15) / (75 - 15) * (0.70 - 0.15);
     }
     public void closeGate() {
-        pollenGate.setPosition(0.7);
-        nectarGate.setPosition(1.0);
+        pollenGate.setPosition(POLLEN_GATE_CLOSED);
     }
     public void openGate()  {
-        pollenGate.setPosition(1.0);
-        nectarGate.setPosition(0.60);
+        pollenGate.setPosition(POLLEN_GATE_OPEN);
     }
 
 }

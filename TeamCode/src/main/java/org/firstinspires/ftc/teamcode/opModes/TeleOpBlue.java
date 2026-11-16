@@ -42,10 +42,7 @@ public class TeleOpBlue extends LinearOpMode {
         shooter = new Shooter(hardwareMap, intake, gamepad1);
 
         double pollenTargetSpeed = Shooter.POLLEN_SPEED;   // defaults live in Shooter.java
-        double nectarTargetSpeed = Shooter.NECTAR_SPEED;
         double pollenSpeedAdjustment = 0;
-        double nectarSpeedAdjustment = 0;
-        boolean pollenSelected = true;   // which shooter gamepad2's d-pad adjusts
         cellPosition = 1; //cell starts with blue alliance cell up, red alliance cell down.
 
         // Use the shared field frame (inches, origin bottom-left, center (70, 70)); see FieldConstants.
@@ -127,16 +124,11 @@ public class TeleOpBlue extends LinearOpMode {
             if (pad2.squareWasPressed()) {
                 cellPosition = (cellPosition == 1) ? 0 : 1;
             }
-            if (pad2.circleWasPressed()) {
-                pollenSelected = !pollenSelected;
-            }
             if (pad2.dpadUpWasPressed()) {
-                if (pollenSelected) pollenSpeedAdjustment += 25;
-                else nectarSpeedAdjustment += 25;
+                pollenSpeedAdjustment += 25;
             }
             if (pad2.dpadDownWasPressed()) {
-                if (pollenSelected) pollenSpeedAdjustment -= 25;
-                else nectarSpeedAdjustment -= 25;
+                pollenSpeedAdjustment -= 25;
             }
             if (pad2.right_bumper) {
                 double positionInCycle = System.currentTimeMillis() % 1000;
@@ -144,15 +136,12 @@ public class TeleOpBlue extends LinearOpMode {
             }
             shooter.setManualGateOpen(pad1.triangle || pad2.triangle);   // hold Triangle to force the gates open
 
-            shooter.setTargetSpeeds(pollenTargetSpeed + pollenSpeedAdjustment, nectarTargetSpeed + nectarSpeedAdjustment);
+            shooter.setTargetSpeed(pollenTargetSpeed + pollenSpeedAdjustment);
             shooter.update();   // in SHOOT mode this overrides the intake state
             intake.update();
 
-            telemetry.addData("Selected Shooter (gamepad2 Circle)", pollenSelected ? "Pollen" : "Nectar");
             telemetry.addData("Shooter Target (pollen)", pollenTargetSpeed + pollenSpeedAdjustment);
-            telemetry.addData("Shooter Target (nectar)", nectarTargetSpeed + nectarSpeedAdjustment);
             telemetry.addData("Pollen Speed", shooter.getPollenShooterVelocity());
-            telemetry.addData("Nectar Speed", shooter.getNectarShooterVelocity());
             telemetry.addData("Position", drivebase.getPositionTelemetry());
             telemetry.addData("Laptop gamepad (Panels)", input.status());
             telemetry.addData("Cell Position", cellPosition);

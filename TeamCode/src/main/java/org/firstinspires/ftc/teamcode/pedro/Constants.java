@@ -42,8 +42,8 @@ public class Constants {
     // The Pinpoint tuner measured 2.4348428681140812 in and 7.1141574889656125 in. These are those values
     // times 25.4, which is an exact conversion (1 inch is defined as exactly 25.4 mm).
     // ---------------------------------------------------------------------------------------------
-    public static final double X_POD_OFFSET_MM = 61.84500885009766;
-    public static final double Y_POD_OFFSET_MM = 180.69960021972653;
+    public static final double X_POD_OFFSET_MM = 4.585704953651729;
+    public static final double Y_POD_OFFSET_MM = -1.234068232258474;
 
     // ---------------------------------------------------------------------------------------------
     // Drivetrain. The directions are from the Mecanum tuner.
@@ -80,27 +80,27 @@ public class Constants {
     // ---------------------------------------------------------------------------------------------
     public static ForesightConfig foresightConfig = new ForesightConfig(
             c -> {
-                Controller primaryTranslationalForward = Controller.proportional(0.2907937173376749);
-                Controller secondaryTranslationalForward = Controller.proportional(0.10744050840503869);
-                Controller primaryTranslationalLateral = Controller.proportional(0.4512015714212925);
-                Controller secondaryTranslationalLateral = Controller.proportional(0.16670692431213466);
+                Controller primaryTranslationalForward = Controller.proportional(0.2319855384707084);
+                Controller secondaryTranslationalForward = Controller.proportional(0.08571245769717446);
+                Controller primaryTranslationalLateral = Controller.proportional(0.2928110223884953);
+                Controller secondaryTranslationalLateral = Controller.proportional(0.10818584871793313);
 
                 c.forwardTranslational.set(Controller.piecewise(secondaryTranslationalForward).put(2.5, primaryTranslationalForward));
                 c.strafeTranslational.set(Controller.piecewise(secondaryTranslationalLateral).put(2.5, primaryTranslationalLateral));
 
-                c.coast.set(Controller.proportionalFeedforward(0.011289054348554131));
-                c.brake.set(Controller.proportionalFeedforward(0.009595696196271012));
+                c.coast.set(Controller.proportionalFeedforward(0.010435837566083295));
+                c.brake.set(Controller.proportionalFeedforward(0.0088704619311708));
 
-                c.headingFeedback.set(Controller.proportional(5.01799678455863));
-                c.headingBrakeCoefficients.set(Vector2D.cartesian(0.0692536887158656, 0.006120995669699809));
+                c.headingFeedback.set(Controller.proportional(3.982303611467952));
+                c.headingBrakeCoefficients.set(Vector2D.cartesian(0.05423435850187559, 0.006248403386289292));
 
-                c.linearBrakeCoefficients.set(Matrix.diag(0.12442240000599189, 0.09204427475672114));
-                c.quadraticBrakeCoefficients.set(Matrix.diag(0.0016802072463767191, 0.0019138714862556533));
+                c.linearBrakeCoefficients.set(Matrix.diag(0.09932164190999876, 0.05685475694014595));
+                c.quadraticBrakeCoefficients.set(Matrix.diag(0.001464813284042718, 0.0019076129521964252));
 
-                c.maxAchievableForwardVelocity.set(82.16302211066271);
-                c.maxAchievableStrafeVelocity.set(66.54323291623383);
-                c.naturalForwardDeceleration.set(45.7517351729024);
-                c.naturalStrafeDeceleration.set(61.04728543010599);
+                c.maxAchievableForwardVelocity.set(82.64452845031235);
+                c.maxAchievableStrafeVelocity.set(72.71129591854385);
+                c.naturalForwardDeceleration.set(33.77632843737852);
+                c.naturalStrafeDeceleration.set(66.82436419307967);
             }
     );
 

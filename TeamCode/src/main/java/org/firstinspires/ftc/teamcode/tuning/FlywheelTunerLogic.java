@@ -9,14 +9,15 @@ import java.util.List;
  * runs the motor.
  *
  * F: run with P = 0 at the target speed and scale F until the steady speed hits the target.
- * P: with F set, knock the speed down by DIP_FRACTION, let go, and measure how it recovers. Try P values from
- * low to high and keep the one that recovers fastest without overshooting or ringing.
+ * P: with F set, hit the wheel with the same brake pulse every time (the OpMode calibrates it to dip about
+ * DIP_FRACTION), let go, and measure how long it takes to be back at speed. Try P values from low to high and keep the
+ * one that is back fastest without overshooting or ringing.
  */
 public final class FlywheelTunerLogic {
     private FlywheelTunerLogic() {}
 
     // Edit these to change what "good" means
-    public static final double DIP_FRACTION = 0.08;        // how far each test knocks the speed down (8%, about a ball)
+    public static final double DIP_FRACTION = 0.06;        // the dip the brake pulse is calibrated to (6%: the average real shot dip measured by ShotLogger)
     public static final double BAND_PCT = 1.0;             // recovered = within this % of the target
     public static final double MAX_OVERSHOOT_PCT = 2.0;    // overshoot above target allowed
     public static final double SMOOTH_MS = 25;             // readings are averaged over +/- this before judging them
@@ -26,8 +27,11 @@ public final class FlywheelTunerLogic {
     public static final double P_STEP = 1.6;               // coarse search multiplies P by this each trial
     public static final double OVERSHOOT_WEIGHT_MS = 150;  // each 1% of overshoot costs this much (ms)
     public static final double RINGING_WEIGHT_MS = 400;    // each extra crossing of the target costs this much (ms)
-    public static final int FINAL_REPEATS = 3;             // final candidates are each tested this many times
+    public static final int FINAL_REPEATS = 4;             // final candidates are each tested this many times
     public static final int FINALISTS = 3;
+    // A test whose dip is far outside this range of the aim (DIP_FRACTION) is treated as a glitch and run once more
+    public static final double ODD_DIP_LOW = 0.4;
+    public static final double ODD_DIP_HIGH = 2.5;
 
     public interface Plant {
         /** Runs closed loop with P = I = D = 0 and this F; returns the steady speed (ticks/s, positive). */
@@ -55,6 +59,7 @@ public final class FlywheelTunerLogic {
     public static final class Metrics {
         public double dipPct;
         public double settleMs;       // time after the lowest point until the speed stays within the band
+        public double recoverMs;      // time after the hit (release) until the speed stays within the band; what P is judged on
         public double overshootPct;
         public int crossings;         // times it crossed the target after the lowest point
         public boolean ringing;
@@ -63,7 +68,7 @@ public final class FlywheelTunerLogic {
 
         @Override
         public String toString() {
-            return String.format("dip %.1f%%  settle %.0f ms  over %.1f%%  cross %d%s", dipPct, settleMs, overshootPct,
+            return String.format("dip %.1f%%  back %.0f ms  over %.1f%%  cross %d%s", dipPct, recoverMs, overshootPct,
                     crossings, ringing ? "  RINGING" : (unsettled ? "  SLOW" : ""));
         }
     }
@@ -94,6 +99,11 @@ public final class FlywheelTunerLogic {
         public double overshootSpreadPct;
         public boolean withinOvershootLimit;
         public List<Trial> trials = new ArrayList<>();
+        public double meanRecoverMs;      // from the hit, the number P was chosen on
+        public double recoverSpreadMs;
+        public double meanCost;
+        public List<String> finalistLines = new ArrayList<>();   // every finalist's averages, best first
+        public boolean topAboutEqual;     // the best and second best differ by less than their spread
     }
 
     // ---------- F ----------
@@ -175,6 +185,7 @@ public final class FlywheelTunerLogic {
         m.overshootPct = maxOver;
         m.unsettled = Math.abs((s.v[n - 1] - target) / target * 100) > band;
         m.settleMs = m.unsettled ? RECORD_MS : (lastOutside < 0 ? 0 : lastOutside - s.tMs[iMin]);
+        m.recoverMs = m.unsettled ? RECORD_MS : (lastOutside < 0 ? 0 : lastOutside - s.tMs[0]);
 
         // Crossings of the target, with a small dead band so noise doesn't count
         int sign = 0;
@@ -190,7 +201,9 @@ public final class FlywheelTunerLogic {
         m.crossings = crossings;
         m.ringing = crossings > 6;
 
-        m.cost = m.settleMs + OVERSHOOT_WEIGHT_MS * m.overshootPct + RINGING_WEIGHT_MS * Math.max(0, crossings - 2);
+        // Judged from the hit, not from the lowest point: every P gets the same hit, so a P that stops the fall sooner
+        // (a shallower dip) is rightly scored better.
+        m.cost = m.recoverMs + OVERSHOOT_WEIGHT_MS * m.overshootPct + RINGING_WEIGHT_MS * Math.max(0, crossings - 2);
         if (m.overshootPct > MAX_OVERSHOOT_PCT) m.cost += 5000;
         if (m.ringing) m.cost += 5000;
         return m;
@@ -234,43 +247,60 @@ public final class FlywheelTunerLogic {
             if (!finalists.contains(t.p)) finalists.add(t.p);
         }
 
-        PResult bestResult = null;
-        double bestMeanCost = Double.MAX_VALUE;
+        List<PResult> results = new ArrayList<>();
         for (double fp : finalists) {
             PResult r = new PResult();
             r.p = fp;
-            double cost = 0;
             double[] settle = new double[FINAL_REPEATS];
+            double[] recover = new double[FINAL_REPEATS];
             double[] over = new double[FINAL_REPEATS];
+            double[] cost = new double[FINAL_REPEATS];
             for (int i = 0; i < FINAL_REPEATS; i++) {
                 Trial t = run(plant, target, f, fp, all, log, "final " + (i + 1) + "/" + FINAL_REPEATS);
                 r.trials.add(t);
                 settle[i] = t.m.settleMs;
+                recover[i] = t.m.recoverMs;
                 over[i] = t.m.overshootPct;
-                cost += t.m.cost;
+                cost[i] = t.m.cost;
                 r.meanDipPct += t.m.dipPct / FINAL_REPEATS;
             }
-            cost /= FINAL_REPEATS;
+            r.meanCost = mean(cost);
             r.meanSettleMs = mean(settle);
+            r.meanRecoverMs = mean(recover);
             r.meanOvershootPct = mean(over);
             r.settleSpreadMs = std(settle);
+            r.recoverSpreadMs = std(recover);
             r.overshootSpreadPct = std(over);
             r.withinOvershootLimit = r.meanOvershootPct <= MAX_OVERSHOOT_PCT;
-            if (cost < bestMeanCost) {
-                bestMeanCost = cost;
-                bestResult = r;
-            }
+            results.add(r);
+        }
+        Collections.sort(results, (a, b) -> Double.compare(a.meanCost, b.meanCost));
+        PResult bestResult = results.get(0);
+        for (PResult r : results) {
+            bestResult.finalistLines.add(String.format("P %.1f: back in %.0f ms (+/- %.0f), over %.2f%%, dip %.1f%%",
+                    r.p, r.meanRecoverMs, r.recoverSpreadMs, r.meanOvershootPct, r.meanDipPct));
+        }
+        if (results.size() > 1) {
+            PResult second = results.get(1);
+            bestResult.topAboutEqual = second.meanCost - bestResult.meanCost < bestResult.recoverSpreadMs + second.recoverSpreadMs;
         }
         bestResult.trials = all;
         return bestResult;
     }
 
+    /** One test at this P. A test with a far-off dip is treated as a glitch and run once more. */
     private static Trial run(Plant plant, double target, double f, double p, List<Trial> all, Listener log, String stage) {
-        Samples s = plant.kickTest(p, f, target);
-        Metrics m = analyze(s, target);
-        Trial t = new Trial(p, m);
+        double want = DIP_FRACTION * 100;
+        Trial t = null;
+        for (int attempt = 0; attempt < 2; attempt++) {
+            Samples s = plant.kickTest(p, f, target);
+            Metrics m = analyze(s, target);
+            t = new Trial(p, m);
+            boolean odd = m.dipPct < want * ODD_DIP_LOW || m.dipPct > want * ODD_DIP_HIGH;
+            log.status(String.format("P stage (%s): P %.1f  %s%s", stage, p, m, odd && attempt == 0 ? "  odd dip, retrying" : ""));
+            if (!odd) break;
+        }
         all.add(t);
-        log.status(String.format("P stage (%s): P %.1f  %s", stage, p, m));
         return t;
     }
 

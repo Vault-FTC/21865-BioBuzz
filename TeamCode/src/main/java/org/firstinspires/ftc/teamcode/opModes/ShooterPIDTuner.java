@@ -8,9 +8,10 @@ import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.PIDFCoefficients;
 import com.qualcomm.robotcore.hardware.Servo;
 
+import org.firstinspires.ftc.teamcode.subsystems.Shooter;
+
 /**
- * Tunes the pollen and nectar shooters at the same time. Both motors always run at their own target velocity;
- * Options selects which one the Cross/Square and D-Pad adjustments apply to.
+ * Tunes the pollen shooter. Cross/Square adjust its target velocity and the D-Pad adjusts P and F.
  * Left bumper runs the intake, left trigger runs it in reverse, and Share toggles the shooter gates open/closed.
  */
 @TeleOp
@@ -25,7 +26,7 @@ public class ShooterPIDTuner extends OpMode {
         final DcMotorEx motor;
         double targetVelocity = 0;
         double P = 0.0;
-        double F = 13.453;
+        double F = 12.824;
 
         final DcMotorEx.Direction direction;
 
@@ -42,24 +43,17 @@ public class ShooterPIDTuner extends OpMode {
         }
     }
 
-    // Gate positions copied from Shooter.openGate()/closeGate(); keep them in sync if those change.
-    static final double POLLEN_GATE_CLOSED = 0.7;
-    static final double POLLEN_GATE_OPEN = 1.0;
-    static final double NECTAR_GATE_CLOSED = 1.0;
-    static final double NECTAR_GATE_OPEN = 0.6;
 
     public DcMotorEx intake;
     Servo pollenGate;
-    Servo nectarGate;
     boolean gatesOpen = false;
     Flywheel pollen;
-    Flywheel nectar;
     Flywheel selected;
 
     double[] pidStepSizes = {50, 10.0, 1.0, 0.1, 0.01, 0.001, 0.0001};
     int pidStepIndex = 0;
 
-    double[] velocityStepSizes = {10.0, 50.0, 100.0, 500.0, 950.0, 1000.0, 1300.0, 1310.0};
+    double[] velocityStepSizes = {10.0, 50.0, 100.0, 500.0, 950.0, 1000.0, 1350.0};
     int velocityStepIndex = 0;
 
     @Override
@@ -67,13 +61,11 @@ public class ShooterPIDTuner extends OpMode {
         telemetry = org.firstinspires.ftc.teamcode.subsystems.PanelsSupport.joined(telemetry);   // also show telemetry on Panels
         input.update(gamepad1, gamepad2); pad1 = input.pad1; pad2 = input.pad2;
         pollen = new Flywheel("Pollen", hardwareMap.get(DcMotorEx.class, "pollenShooter"), DcMotorEx.Direction.REVERSE);
-        nectar = new Flywheel("Nectar", hardwareMap.get(DcMotorEx.class, "nectarShooter"), DcMotorEx.Direction.FORWARD);
         intake = hardwareMap.get(DcMotorEx.class, "intake");
         pollenGate = hardwareMap.get(Servo.class, "pollenGate");
-        nectarGate = hardwareMap.get(Servo.class, "nectarGate");
         selected = pollen;
 
-        for (Flywheel f : new Flywheel[]{pollen, nectar}) {
+        for (Flywheel f : new Flywheel[]{pollen}) {
             f.motor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
             f.motor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
             f.apply();
@@ -85,11 +77,6 @@ public class ShooterPIDTuner extends OpMode {
     @Override
     public void loop() {
         input.update(gamepad1, gamepad2); pad1 = input.pad1; pad2 = input.pad2;
-        // Options: choose which shooter the adjustments below apply to
-        if (pad1.optionsWasPressed()) {
-            selected = (selected == pollen) ? nectar : pollen;
-        }
-
         // Cycle which velocity step size is active
         if (pad1.triangleWasPressed()) {
             velocityStepIndex = (velocityStepIndex + 1) % velocityStepSizes.length;
@@ -135,13 +122,11 @@ public class ShooterPIDTuner extends OpMode {
         }
 
         pollen.apply();
-        nectar.apply();
 
         telemetry.addData("Gates (Share to toggle)", gatesOpen ? "OPEN" : "closed");
-        telemetry.addData("Selected (Options to switch)", selected.name);
         telemetry.addData("Velocity Step Size", "%.0f (Triangle to cycle, Cross +/Square -)", velocityStepSizes[velocityStepIndex]);
         telemetry.addData("PID Step Size", "%.4f (Circle button)", pidStepSizes[pidStepIndex]);
-        for (Flywheel f : new Flywheel[]{pollen, nectar}) {
+        for (Flywheel f : new Flywheel[]{pollen}) {
             double curVelocity = f.motor.getVelocity();
             telemetry.addLine("----------- " + f.name + " -----------");
             telemetry.addData(f.name + " Target Velocity", "%.0f", f.targetVelocity);
@@ -154,7 +139,6 @@ public class ShooterPIDTuner extends OpMode {
 
     private void setGates(boolean open) {
         gatesOpen = open;
-        pollenGate.setPosition(open ? POLLEN_GATE_OPEN : POLLEN_GATE_CLOSED);
-        nectarGate.setPosition(open ? NECTAR_GATE_OPEN : NECTAR_GATE_CLOSED);
+         pollenGate.setPosition(open ? Shooter.POLLEN_GATE_OPEN : Shooter.POLLEN_GATE_CLOSED);
     }
 }

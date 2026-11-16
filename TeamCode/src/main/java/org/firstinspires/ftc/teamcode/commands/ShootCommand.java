@@ -20,21 +20,18 @@ public class ShootCommand extends Command {
     private final Shooter shooter;
     private final Intake intake;
     private final double pollenSpeed;
-    private final double nectarSpeed;
     private final double spinUpTimeoutMs;
     private final double feedMs;
 
     private final ElapsedTime phaseTimer = new ElapsedTime();
     private boolean feeding;
     private double previousPollenSpeed;
-    private double previousNectarSpeed;
 
-    public ShootCommand(Shooter shooter, Intake intake, double pollenSpeed, double nectarSpeed,
+    public ShootCommand(Shooter shooter, Intake intake, double pollenSpeed,
                         double spinUpTimeoutMs, double feedMs) {
         this.shooter = shooter;
         this.intake = intake;
         this.pollenSpeed = pollenSpeed;
-        this.nectarSpeed = nectarSpeed;
         this.spinUpTimeoutMs = spinUpTimeoutMs;
         this.feedMs = feedMs;
     }
@@ -46,8 +43,7 @@ public class ShootCommand extends Command {
     @Override
     public void initialize() {
         previousPollenSpeed = shooter.getTargetPollenSpeed();
-        previousNectarSpeed = shooter.getTargetNectarSpeed();
-        shooter.setTargetSpeeds(pollenSpeed, nectarSpeed);
+        shooter.setTargetSpeed(pollenSpeed);
         shooter.setState(Shooter.CaseModes.SHOOT);
         feeding = false;
         phaseTimer.reset();
@@ -82,6 +78,6 @@ public class ShootCommand extends Command {
         shooter.setManualGateOpen(false);
         shooter.setState(Shooter.CaseModes.SHOOT_GATE_CLOSED);
         intake.setState(Intake.CaseModes.OFF);
-        shooter.setTargetSpeeds(previousPollenSpeed, previousNectarSpeed);
+        shooter.setTargetSpeed(previousPollenSpeed);
     }
 }

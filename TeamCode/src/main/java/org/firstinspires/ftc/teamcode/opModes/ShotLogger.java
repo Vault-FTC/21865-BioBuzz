@@ -35,7 +35,8 @@ public class ShotLogger extends LinearOpMode {
     private final org.firstinspires.ftc.teamcode.subsystems.LaptopInput input = new org.firstinspires.ftc.teamcode.subsystems.LaptopInput();
     private com.qualcomm.robotcore.hardware.Gamepad pad1;
     private com.qualcomm.robotcore.hardware.Gamepad pad2;
-    static final double DROP_TRIGGER = 100;      // a shot starts when the speed falls this far below the target (ticks/s)
+    static final double LOGGER_SPEED = 1350;       // the flywheel speed this logger runs at (ticks/s); D-pad changes it by 25
+    static final double DROP_TRIGGER = 50;       // a shot starts when the speed falls this far below the target (ticks/s)
     static final double ARM_BAND_PCT = 3.0;      // the wheel must hold within this % of the target...
     static final double ARM_MS = 300;            // ...for this long before it can count a shot
     static final double BAND_PCT = 1.5;          // recovered = within this % of the target
@@ -205,10 +206,8 @@ public class ShotLogger extends LinearOpMode {
         Shooter shooter = new Shooter(hardwareMap, intake, gamepad1);
         shooter.setRumbleEnabled(false);
 
-        double pollenTarget = Shooter.POLLEN_SPEED;
-        double nectarTarget = Shooter.NECTAR_SPEED;
+        double pollenTarget = LOGGER_SPEED;
         Watch pollen = new Watch("Pollen", pollenTarget);
-        Watch nectar = new Watch("Nectar", nectarTarget);
 
         String stamp = String.valueOf(System.currentTimeMillis());
         eventsCsv = new File(AppUtil.FIRST_FOLDER, "shot_logger_events_" + stamp + ".csv");
@@ -219,7 +218,6 @@ public class ShotLogger extends LinearOpMode {
         while (!isStarted() && !isStopRequested()) {
             telemetry.addLine("Load balls, then press Play. Hold the shoot button to fire; each shot is recorded by itself.");
             telemetry.addData("Pollen target", pollenTarget);
-            telemetry.addData("Nectar target", nectarTarget);
             telemetry.addLine(String.format("A shot is a drop of more than %.0f below the target.", DROP_TRIGGER));
             telemetry.update();
         }
@@ -231,13 +229,10 @@ public class ShotLogger extends LinearOpMode {
             if (pad1.dpadUpWasPressed() || pad1.dpadDownWasPressed()) {
                 double step = pad1.dpad_up ? 25 : -25;
                 pollenTarget += step;
-                nectarTarget += step;
                 pollen.setTarget(pollenTarget);
-                nectar.setTarget(nectarTarget);
             }
             if (pad1.crossWasPressed()) {
                 pollen.shots.clear();
-                nectar.shots.clear();
             }
 
             if (pad1.left_bumper) {
@@ -254,16 +249,14 @@ public class ShotLogger extends LinearOpMode {
                 shooter.setState(Shooter.CaseModes.SHOOT_GATE_CLOSED);
             }
             shooter.setManualGateOpen(pad1.triangle);
-            shooter.setTargetSpeeds(pollenTarget, nectarTarget);
+            shooter.setTargetSpeed(pollenTarget);
             shooter.update();
             intake.update();
 
             double t = clock.milliseconds();
             pollen.sample(t, shooter.getPollenShooterVelocity());
-            nectar.sample(t, shooter.getNectarShooterVelocity());
 
             show(pollen);
-            show(nectar);
             telemetry.addLine("Cross clears the stats. D-pad up/down changes the target.");
             telemetry.addLine("Files: " + eventsCsv.getName());
             telemetry.update();

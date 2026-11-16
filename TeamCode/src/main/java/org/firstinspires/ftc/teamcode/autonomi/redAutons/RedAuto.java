@@ -31,7 +31,6 @@ public class RedAuto extends LinearOpMode {
     // Shot speeds for this auto. They match the shooter's defaults now. Change them here to override the
     // shooter's speeds for this auto only.
     static final double POLLEN_SPEED = Shooter.POLLEN_SPEED;
-    static final double NECTAR_SPEED = Shooter.NECTAR_SPEED;
 
     // How long a shot keeps feeding once the gates are open (ms)
     static final double SHOT_FEED_MS = 1500;
@@ -68,7 +67,7 @@ public class RedAuto extends LinearOpMode {
 
         // 3. Subsystem settings go here
         shooter.setRumbleEnabled(false);
-        shooter.setTargetSpeeds(POLLEN_SPEED, NECTAR_SPEED);
+        shooter.setTargetSpeed(POLLEN_SPEED);
 
         // 4. Set the start pose
         sleep(300);
@@ -111,36 +110,31 @@ public class RedAuto extends LinearOpMode {
         return curve(start, parkControl1, park).linear(start, park);
     }
 
-    // Shot at this auto's speeds (POLLEN_SPEED / NECTAR_SPEED above), waits as long as it takes to reach speed
+    // Shot at this auto's speeds (POLLEN_SPEED above), waits as long as it takes to reach speed
     private Command shootCommand() {
-        return shootCommand(POLLEN_SPEED, NECTAR_SPEED, 0);
+        return shootCommand(POLLEN_SPEED, 0);
     }
 
     // Shot at this auto's speeds. If the flywheels aren't at speed after timeoutMs, it feeds anyway.
     // For example shootCommand(4000)
     private Command shootCommand(double timeoutMs) {
-        return shootCommand(POLLEN_SPEED, NECTAR_SPEED, timeoutMs);
+        return shootCommand(POLLEN_SPEED, timeoutMs);
     }
 
-    // Shot at custom speeds (pollen, nectar) for this one shot only, for example shootCommand(1100, 1300)
-    private Command shootCommand(double pollenSpeed, double nectarSpeed) {
-        return shootCommand(pollenSpeed, nectarSpeed, 0);
-    }
-
-    // Shot at custom speeds that feeds anyway after timeoutMs if the flywheels aren't at speed, for example
-    // shootCommand(1100, 1300, 4000). A timeout of 0 or less means no timeout.
-    private Command shootCommand(double pollenSpeed, double nectarSpeed, double timeoutMs) {
-        return new ShootCommand(shooter, intake, pollenSpeed, nectarSpeed, timeoutMs, SHOT_FEED_MS);
+    // Shot at a custom pollen speed that feeds anyway after timeoutMs if the flywheels aren't at speed, for example
+    // shootCommand(1100, 4000). A timeout of 0 or less means no timeout.
+    private Command shootCommand(double pollenSpeed, double timeoutMs) {
+        return new ShootCommand(shooter, intake, pollenSpeed, timeoutMs, SHOT_FEED_MS);
     }
 
     // Shot that feeds for feedMs instead of SHOT_FEED_MS, for example shootFor(2500)
     private Command shootFor(double feedMs) {
-        return shootFor(feedMs, POLLEN_SPEED, NECTAR_SPEED);
+        return shootFor(feedMs, POLLEN_SPEED);
     }
 
-    // Same, at custom speeds, for example shootFor(2500, 1100, 1300)
-    private Command shootFor(double feedMs, double pollenSpeed, double nectarSpeed) {
-        return new ShootCommand(shooter, intake, pollenSpeed, nectarSpeed, 0, feedMs);
+    // Same, at a custom speed, for example shootFor(2500, 1100)
+    private Command shootFor(double feedMs, double pollenSpeed) {
+        return new ShootCommand(shooter, intake, pollenSpeed, 0, feedMs);
     }
 
     // Builds the route as a sequence. If STEP_TIMEOUT_MS is above 0, every step also gets that timeout.
