@@ -7,6 +7,7 @@ import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.PIDFCoefficients;
 import com.qualcomm.robotcore.hardware.Servo;
 
+import org.firstinspires.ftc.teamcode.LUT;
 import org.firstinspires.ftc.teamcode.commandSystem.Subsystem;
 
 public class Shooter extends Subsystem {
@@ -18,17 +19,22 @@ public class Shooter extends Subsystem {
     private final Servo pollenGate;
     private final Intake intake;
     // Default flywheel target speeds for teleop and autonomous. Change them here to change them everywhere.
-    public static final double POLLEN_SPEED = 1150;
+    public static final double POLLEN_SPEED = 1240;   // V3 value (was 1330 for shooting from the wall)
+    // false: teleop shoots at POLLEN_SPEED from everywhere. true: teleop picks the speed from LUT.java based on
+    // the distance to the cell it's aiming at. (The gamepad2 d-pad adjustment is added on top either way.)
+    public static final boolean USE_LUT = true;
+    private final LUT blueLeftLut = LUT.blueLeft();
+    private final LUT blueRightLut = LUT.blueRight();
     // Gate servo positions. ShooterPIDTuner uses these too, so change them here only.
-    public static final double POLLEN_GATE_CLOSED = 0.499;
-    public static final double POLLEN_GATE_OPEN = 0.5;
+    public static final double POLLEN_GATE_CLOSED = 0.479;
+    public static final double POLLEN_GATE_OPEN = 0.4983;
 
     double pollenSpeed = POLLEN_SPEED;
     CaseModes currentMode = CaseModes.OFF;
     boolean manualGateOpen = false;
     boolean rumbleEnabled = true;   // teleop rumbles when the shooter is up to speed; autos turn this off
     boolean shootReady = false;   // latched once the flywheels reach speed in SHOOT; cleared when leaving SHOOT
-    PIDFCoefficients pollenPIDF = new PIDFCoefficients(167.8, 0, 0, 12.421); // F from the 2026-11-16 tuner runs at 1350 (they gave 12.174 and 12.421; before that 12.824)
+    PIDFCoefficients pollenPIDF = new PIDFCoefficients(180, 0, 0, 12.47); // V3 values (was 180, 0, 0, 12.46 for shooting from the wall at 1330)
     Gamepad gamepad1; //what is this?
 
     public Shooter(HardwareMap hardwareMap, Intake intake, Gamepad gamepad) {
@@ -64,7 +70,7 @@ public class Shooter extends Subsystem {
                 }
                 if (shootReady) {
                     gateOpen = true;
-                    intake.setState(Intake.CaseModes.ON);
+                    intake.setState(Intake.CaseModes.SIXTY_PERCENT_SPEED);
                     if (rumbleEnabled) gamepad1.rumble(1000);
                 }
                 break;
@@ -78,7 +84,7 @@ public class Shooter extends Subsystem {
                 }
                 if (shootReady) {
                     gateOpen = true;
-                    intake.setState(Intake.CaseModes.SIXTY_PERCENT_SPEED);
+                    intake.setState(Intake.CaseModes.HALF_SPEED);
                     if (rumbleEnabled) gamepad1.rumble(1000);
                 }
                 break;
@@ -119,11 +125,14 @@ public class Shooter extends Subsystem {
         if (s != CaseModes.SHOOT) shootReady = false;
         currentMode = s; //currentMode = s??? what does that mean??
     }
-//    public double distanceToSpeed(double distanceCm) {
-//        speed = lut.getSpeed(distanceCm);
-//        distance = distanceCm;
-//        return speed;
-//    }
+    /**
+     * Flywheel speed from the lookup table (LUT.java) for a shot distanceIn inches from the cell.
+     * blueRightTable picks the table: true = blue right cell (which is red's LEFT cell), false = blue left
+     * cell (red's RIGHT cell). Each teleop works out which one from its own cell.
+     */
+    public double distanceToSpeed(double distanceIn, boolean blueRightTable) {
+        return (blueRightTable ? blueRightLut : blueLeftLut).getSpeed(distanceIn);
+    }
     /** Stores the target speeds without spinning the motors; update() applies them in the SHOOT modes. */
     public double getTargetPollenSpeed() {
         return pollenSpeed;

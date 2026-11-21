@@ -250,11 +250,13 @@ public class Drivebase extends Subsystem {
                 Pinpoint.getHeading(AngleUnit.RADIANS));   // robot on the Panels field
     }
 
+    /** Straight-line distance from the robot to the goal, in field units (inches, FieldConstants.DISTANCE_UNIT). */
     public static double distanceToGoal(Pose2D robot, Pose2D goal) {
-        double dx = robot.getX(DistanceUnit.CM) - goal.getX(DistanceUnit.CM);
-        double dy = robot.getY(DistanceUnit.CM) - goal.getY(DistanceUnit.CM);
+        double dx = goal.getX(FieldConstants.DISTANCE_UNIT) - robot.getX(FieldConstants.DISTANCE_UNIT);
+        double dy = goal.getY(FieldConstants.DISTANCE_UNIT) - robot.getY(FieldConstants.DISTANCE_UNIT);
         return Math.hypot(dx, dy);
     }
+
     public static double angleToGoal(Pose2D robot, Pose2D goal) {
         double dx = goal.getX(DistanceUnit.CM) - robot.getX(DistanceUnit.CM);
         double dy = goal.getY(DistanceUnit.CM) - robot.getY(DistanceUnit.CM);

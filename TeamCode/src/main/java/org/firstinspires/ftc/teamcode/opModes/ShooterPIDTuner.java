@@ -25,8 +25,8 @@ public class ShooterPIDTuner extends OpMode {
         final String name;
         final DcMotorEx motor;
         double targetVelocity = 0;
-        double P = 0.0;
-        double F = 12.824;
+        double P = 0;
+        double F = 12.47;
 
         final DcMotorEx.Direction direction;
 
@@ -53,8 +53,8 @@ public class ShooterPIDTuner extends OpMode {
     double[] pidStepSizes = {50, 10.0, 1.0, 0.1, 0.01, 0.001, 0.0001};
     int pidStepIndex = 0;
 
-    double[] velocityStepSizes = {10.0, 50.0, 100.0, 500.0, 950.0, 1000.0, 1350.0};
-    int velocityStepIndex = 0;
+    double[] velocityStepSizes = {10.0, 50.0, 100.0, 500.0, 950.0, 1000.0, 1240};
+    int velocityStepIndex = 6;
 
     @Override
     public void init() {

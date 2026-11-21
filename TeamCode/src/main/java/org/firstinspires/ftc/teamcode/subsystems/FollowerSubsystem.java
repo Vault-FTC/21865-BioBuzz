@@ -44,6 +44,17 @@ public class FollowerSubsystem extends Subsystem {
         follower.follow(path);
     }
 
+    private String currentPathName = "none";
+
+    /** Name of the path being followed (or the last one, marked done), for telemetry. */
+    public String getCurrentPathName() {
+        return currentPathName;
+    }
+
+    public void setCurrentPathName(String name) {
+        currentPathName = name;
+    }
+
     public boolean isBusy() {
         return follower.isBusy();
     }

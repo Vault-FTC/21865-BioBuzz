@@ -38,12 +38,18 @@ public class Constants {
     public static final String PINPOINT_NAME = "pinpoint";
 
     // ---------------------------------------------------------------------------------------------
-    // Pinpoint pod offsets, in millimeters.
-    // The Pinpoint tuner measured 2.4348428681140812 in and 7.1141574889656125 in. These are those values
-    // times 25.4, which is an exact conversion (1 inch is defined as exactly 25.4 mm).
+    // Pinpoint pod offsets, in INCHES (offsetUnits below is INCH), measured from the robot's center of
+    // rotation (Pedro wants the center). Pinpoint convention, with the shooter end as the front:
+    //   X_POD_OFFSET: how far LEFT of center the X (forward-rolling) pod is. Right of center = negative.
+    //   Y_POD_OFFSET: how far FORWARD of center the Y (sideways-rolling) pod is. Behind center = negative.
+    // Hand-measured from the center 2026-11-17:
+    //   x = -(12 1/8 - 12 29/32 / 2) = -5.671875   (pod is right of center)
+    //   y = 9 31/32 - 7 3/4         = +2.21875    (pod is toward the shooter)
+    // The old tuner values (x +5.6206, y -2.4129) have the same sizes but opposite signs: the tuner ran
+    // while the pod directions were still FORWARD, before both pods were set to REVERSED.
     // ---------------------------------------------------------------------------------------------
-    public static final double X_POD_OFFSET_MM = 4.585704953651729;
-    public static final double Y_POD_OFFSET_MM = -1.234068232258474;
+    public static final double X_POD_OFFSET_IN = -5.671875;
+    public static final double Y_POD_OFFSET_IN = 2.21875;
 
     // ---------------------------------------------------------------------------------------------
     // Drivetrain. The directions are from the Mecanum tuner.
@@ -61,17 +67,17 @@ public class Constants {
 
     // ---------------------------------------------------------------------------------------------
     // Localizer (goBILDA Pinpoint). The pod directions are from the Pinpoint tuner. Offsets are in
-    // millimeters (offsetUnits); positions and everything else Pedro reports are in inches.
+    // inches (offsetUnits); positions and everything else Pedro reports are in inches too.
     // ---------------------------------------------------------------------------------------------
     public static PinpointConfig localizerConfig = new PinpointConfig(c -> {
         c.name.set(PINPOINT_NAME);
         c.podType.set(GoBildaPinpointDriver.GoBildaOdometryPods.goBILDA_4_BAR_POD);
-        c.xPodOffset.set(X_POD_OFFSET_MM);
-        c.yPodOffset.set(Y_POD_OFFSET_MM);
-        c.xPodDirection.set(GoBildaPinpointDriver.EncoderDirection.FORWARD);
-        c.yPodDirection.set(GoBildaPinpointDriver.EncoderDirection.FORWARD);
+        c.xPodOffset.set(X_POD_OFFSET_IN);
+        c.yPodOffset.set(Y_POD_OFFSET_IN);
+        c.xPodDirection.set(GoBildaPinpointDriver.EncoderDirection.REVERSED);   // Odometry Test 2026-11-16: both pods read backwards
+        c.yPodDirection.set(GoBildaPinpointDriver.EncoderDirection.REVERSED);
         c.globalDistanceUnit.set(DistanceUnit.INCH);
-        c.offsetUnits.set(DistanceUnit.MM);
+        c.offsetUnits.set(DistanceUnit.INCH);   // the pod offsets above are in inches
     });
 
     // ---------------------------------------------------------------------------------------------
@@ -80,27 +86,27 @@ public class Constants {
     // ---------------------------------------------------------------------------------------------
     public static ForesightConfig foresightConfig = new ForesightConfig(
             c -> {
-                Controller primaryTranslationalForward = Controller.proportional(0.2319855384707084);
-                Controller secondaryTranslationalForward = Controller.proportional(0.08571245769717446);
-                Controller primaryTranslationalLateral = Controller.proportional(0.2928110223884953);
-                Controller secondaryTranslationalLateral = Controller.proportional(0.10818584871793313);
+                Controller primaryTranslationalForward = Controller.proportional(0.23984813613508096);
+                Controller secondaryTranslationalForward = Controller.proportional(0.08861747744168122);
+                Controller primaryTranslationalLateral = Controller.proportional(0.37861870265673003);
+                Controller secondaryTranslationalLateral = Controller.proportional(0.13988949375360155);
 
                 c.forwardTranslational.set(Controller.piecewise(secondaryTranslationalForward).put(2.5, primaryTranslationalForward));
                 c.strafeTranslational.set(Controller.piecewise(secondaryTranslationalLateral).put(2.5, primaryTranslationalLateral));
 
-                c.coast.set(Controller.proportionalFeedforward(0.010435837566083295));
-                c.brake.set(Controller.proportionalFeedforward(0.0088704619311708));
+                c.coast.set(Controller.proportionalFeedforward(0.010595443452489145));
+                c.brake.set(Controller.proportionalFeedforward(0.009006126934615773));
 
-                c.headingFeedback.set(Controller.proportional(3.982303611467952));
-                c.headingBrakeCoefficients.set(Vector2D.cartesian(0.05423435850187559, 0.006248403386289292));
+                c.headingFeedback.set(Controller.proportional(4.4254139028617905));
+                c.headingBrakeCoefficients.set(Vector2D.cartesian(0.06015186395782536, 0.005590313856821306));
 
-                c.linearBrakeCoefficients.set(Matrix.diag(0.09932164190999876, 0.05685475694014595));
-                c.quadraticBrakeCoefficients.set(Matrix.diag(0.001464813284042718, 0.0019076129521964252));
+                c.linearBrakeCoefficients.set(Matrix.diag(0.10712154785269126, 0.07911232743868482));
+                c.quadraticBrakeCoefficients.set(Matrix.diag(0.001479920152080113, 0.0017798206906616946));
 
-                c.maxAchievableForwardVelocity.set(82.64452845031235);
-                c.maxAchievableStrafeVelocity.set(72.71129591854385);
-                c.naturalForwardDeceleration.set(33.77632843737852);
-                c.naturalStrafeDeceleration.set(66.82436419307967);
+                c.maxAchievableForwardVelocity.set(92.82812896213719);
+                c.maxAchievableStrafeVelocity.set(75.9819614050871);
+                c.naturalForwardDeceleration.set(24.622478439537456);
+                c.naturalStrafeDeceleration.set(65.73345316763948);
             }
     );
 

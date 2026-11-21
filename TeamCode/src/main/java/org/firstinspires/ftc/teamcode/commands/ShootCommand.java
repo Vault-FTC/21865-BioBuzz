@@ -6,6 +6,8 @@ import org.firstinspires.ftc.teamcode.commandSystem.Command;
 import org.firstinspires.ftc.teamcode.subsystems.Intake;
 import org.firstinspires.ftc.teamcode.subsystems.Shooter;
 
+import java.util.function.DoubleSupplier;
+
 /**
  * One shot: spin the flywheels up, open the gates and feed once they are at speed, keep feeding for feedMs, then
  * clean up (gates closed, intake off, speeds put back).
@@ -14,12 +16,15 @@ import org.firstinspires.ftc.teamcode.subsystems.Shooter;
  * normally. If the time runs out first, it feeds anyway instead of skipping the shot. 0 or less means wait as long
  * as it takes.
  *
+ * <p>The speed can be a fixed number, or a DoubleSupplier that is asked for the speed when the shot starts
+ * (the autos use that to pick the LUT speed from where the robot actually is at that moment).
+ *
  * <p>The cleanup is in end(), so it runs however the command stops: finished normally, or cancelled by a timeout.
  */
 public class ShootCommand extends Command {
     private final Shooter shooter;
     private final Intake intake;
-    private final double pollenSpeed;
+    private final DoubleSupplier pollenSpeed;
     private final double spinUpTimeoutMs;
     private final double feedMs;
 
@@ -28,6 +33,12 @@ public class ShootCommand extends Command {
     private double previousPollenSpeed;
 
     public ShootCommand(Shooter shooter, Intake intake, double pollenSpeed,
+                        double spinUpTimeoutMs, double feedMs) {
+        this(shooter, intake, () -> pollenSpeed, spinUpTimeoutMs, feedMs);
+    }
+
+    /** pollenSpeed is read once, when the shot starts. */
+    public ShootCommand(Shooter shooter, Intake intake, DoubleSupplier pollenSpeed,
                         double spinUpTimeoutMs, double feedMs) {
         this.shooter = shooter;
         this.intake = intake;
@@ -43,8 +54,8 @@ public class ShootCommand extends Command {
     @Override
     public void initialize() {
         previousPollenSpeed = shooter.getTargetPollenSpeed();
-        shooter.setTargetSpeed(pollenSpeed);
-        shooter.setState(Shooter.CaseModes.SHOOT);
+        shooter.setTargetSpeed(pollenSpeed.getAsDouble());
+        shooter.setState(Shooter.CaseModes.AUTO_SHOOT);
         feeding = false;
         phaseTimer.reset();
     }

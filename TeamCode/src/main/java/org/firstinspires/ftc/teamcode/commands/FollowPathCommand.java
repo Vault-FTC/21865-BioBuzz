@@ -12,15 +12,23 @@ import org.firstinspires.ftc.teamcode.subsystems.FollowerSubsystem;
 public class FollowPathCommand extends Command {
     private final FollowerSubsystem followerSubsystem;
     private final Path path;
+    private final String name;
 
     public FollowPathCommand(FollowerSubsystem followerSubsystem, Path path) {
+        this(followerSubsystem, path, "path");
+    }
+
+    /** name is shown on telemetry while this path runs (see FollowerSubsystem.getCurrentPathName()). */
+    public FollowPathCommand(FollowerSubsystem followerSubsystem, Path path, String name) {
         this.followerSubsystem = followerSubsystem;
         this.path = path;
+        this.name = name;
         addRequirements(followerSubsystem);
     }
 
     @Override
     public void initialize() {
+        followerSubsystem.setCurrentPathName(name);
         followerSubsystem.follow(path);
     }
 
@@ -37,5 +45,6 @@ public class FollowPathCommand extends Command {
     @Override
     public void end(boolean interrupted) {
         if (interrupted) followerSubsystem.stop();
+        followerSubsystem.setCurrentPathName(name + (interrupted ? " (stopped)" : " (done)"));
     }
 }

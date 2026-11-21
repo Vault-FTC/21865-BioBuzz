@@ -12,8 +12,8 @@ public class Intake extends Subsystem {
     {
         OFF, REVERSE, ON, HALF_SPEED, SIXTY_PERCENT_SPEED
     }
-    public static final double FLOWER_ARM_UP = 0.22;
-    public static final double FLOWER_ARM_DOWN = 0.76;
+    public static final double FLOWER_ARM_UP = 0.25;
+    public static final double FLOWER_ARM_DOWN = 0.95;
 
     private DcMotorEx intake;
     private Servo flowerArm; // uncomment out flower intake lines when we actually get flower intake into the code
@@ -38,7 +38,7 @@ public class Intake extends Subsystem {
     {
         switch(currentMode) {
             case ON:
-                intake.setPower(0.9);
+                intake.setPower(1);
                 break;
             case OFF:
                 intake.setPower(0);
@@ -47,7 +47,7 @@ public class Intake extends Subsystem {
                 intake.setPower(0.5);
                 break;
             case SIXTY_PERCENT_SPEED:
-                intake.setPower(0.5);
+                intake.setPower(0.6);
                 break;
             case REVERSE:
                 intake.setPower(-0.6);
